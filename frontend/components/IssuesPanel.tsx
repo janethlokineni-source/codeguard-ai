@@ -90,11 +90,11 @@ export const IssuesPanel: React.FC<IssuesPanelProps> = React.memo(({
           {safeFixesCount > 0 && (
             <button
               onClick={() => onApplyAllCategoryFixes(selectedCategory)}
-              className="flex items-center gap-1 px-2.5 py-1 rounded bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-semibold transition-colors shadow-sm cursor-pointer"
-              title={`Fix all ${safeFixesCount} issues in this view`}
+              className="flex items-center gap-1 px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-semibold transition-colors shadow-sm cursor-pointer"
+              title={`Fix and remove all ${safeFixesCount} issues`}
             >
               <Wand2 className="w-3 h-3" />
-              <span>Fix All ({safeFixesCount})</span>
+              <span>{selectedCategory === 'all' ? `Remove All Errors (${safeFixesCount})` : `Fix All (${safeFixesCount})`}</span>
             </button>
           )}
         </div>

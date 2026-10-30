@@ -109,7 +109,7 @@ COMPILED_RULES: List[CompiledRule] = [
 
     # 4. Cross-Site Scripting (XSS)
     CompiledRule(
-        r"""dangerouslySetInnerHTML\s*=\s*\{\s*\{\s*__html:\s*([^}]+)\}""",
+        r"""dangerouslySetInnerHTML\s*=\s*\{\s*\{\s*__html:\s*(?!\s*(?:DOMPurify\.sanitize|sanitize)\b)[^}]+\}""",
         "security", "High",
         "Cross-Site Scripting (XSS) via dangerouslySetInnerHTML",
         "Injecting raw HTML without sanitization bypasses React's built-in escaping, enabling malicious script injection.",
@@ -269,7 +269,7 @@ COMPILED_RULES: List[CompiledRule] = [
         "quality", "Low",
         "Unresolved TODO/FIXME Comment",
         "Unresolved TODO or FIXME comment detected. Ensure outstanding edge cases or tech debt are resolved before merging.",
-        lambda line, l: line,
+        lambda line, l: re.sub(r"""(?i)(//|#)\s*(TODO|FIXME|XXX):?\s*""", r"\1 Note: ", line),
         ["javascript", "typescript", "python", "java", "sql"]
     ),
 
@@ -352,36 +352,42 @@ def check_python_ast(file_path: str, content: str) -> List[Issue]:
             for handler in node.handlers:
                 lineno = handler.lineno
                 snippet = lines[lineno - 1] if lineno <= len(lines) else ""
+                indent = len(snippet) - len(snippet.lstrip())
+                ind_str = " " * indent
+                has_pass = len(handler.body) == 1 and isinstance(handler.body[0], ast.Pass)
+                end_lineno = handler.body[0].lineno if (has_pass and hasattr(handler.body[0], 'lineno')) else lineno
+
                 if handler.type is None:
-                    indent = len(snippet) - len(snippet.lstrip())
-                    ind_str = " " * indent
+                    # Bare except handler
+                    fix_code = f"{ind_str}except Exception as err:\n{ind_str}    return None" if has_pass else f"{ind_str}except Exception as err:"
                     issues.append(Issue(
                         id=str(uuid.uuid4()),
                         filePath=file_path,
                         lineNumber=lineno,
-                        snippet=snippet.strip(),
+                        endLineNumber=end_lineno,
+                        snippet=snippet.strip() if not has_pass else f"{snippet.strip()}\n{lines[end_lineno - 1].strip() if end_lineno <= len(lines) else 'pass'}",
                         originalCode=snippet,
                         category="error",
                         severity="Medium",
                         title="Bare Exception Handler",
                         explanation="Bare 'except:' intercepts system signals and KeyboardInterrupt, concealing fatal failures and masking logic errors.",
-                        suggestedFix=f"{ind_str}except Exception as err:",
+                        suggestedFix=fix_code,
                         ruleId="py-bare-except"
                     ))
-                elif len(handler.body) == 1 and isinstance(handler.body[0], ast.Pass):
-                    indent = len(snippet) - len(snippet.lstrip())
-                    ind_str = " " * indent
+                elif has_pass:
+                    # Explicit exception type but silenced with pass
                     issues.append(Issue(
                         id=str(uuid.uuid4()),
                         filePath=file_path,
                         lineNumber=lineno,
-                        snippet=snippet.strip(),
+                        endLineNumber=end_lineno,
+                        snippet=f"{snippet.strip()}\n{lines[end_lineno - 1].strip() if end_lineno <= len(lines) else 'pass'}",
                         originalCode=snippet,
                         category="error",
                         severity="Medium",
                         title="Silent Exception Suppression",
                         explanation="Silently ignoring exceptions with 'pass' hides critical runtime failures and leaves state unpredictable.",
-                        suggestedFix=f"{ind_str}except Exception as err:\n{ind_str}    logger.warning(f'Encountered error: {{err}}')",
+                        suggestedFix=f"{ind_str}{snippet.strip()}\n{ind_str}    return None",
                         ruleId="py-silent-except"
                     ))
             self.generic_visit(node)
@@ -413,6 +419,16 @@ def check_json_file(file_path: str, content: str) -> List[Issue]:
         ))
     return issues
 
+def is_inside_try_block(lines: List[str], current_line_idx: int) -> bool:
+    brace_balance = 0
+    for i in range(current_line_idx - 1, -1, -1):
+        prev = lines[i]
+        brace_balance += prev.count('}') - prev.count('{')
+        if re.search(r'\btry\s*\{', prev):
+            if brace_balance <= 0:
+                return True
+    return False
+
 def scan_file_content(file_path: str, content: str) -> List[Issue]:
     # Check cache first for 0ms re-scan on unchanged content
     c_hash = get_content_hash(file_path, content)
@@ -429,6 +445,36 @@ def scan_file_content(file_path: str, content: str) -> List[Issue]:
 
     lines = content.splitlines()
 
+    # Detect multi-line empty catch blocks in JS/TS
+    if lang in ['javascript', 'typescript']:
+        for idx, l_text in enumerate(lines, start=1):
+            if re.search(r'\bcatch\s*(\([^)]*\))?\s*\{', l_text):
+                end_idx = None
+                for j in range(idx, min(len(lines), idx + 8)):
+                    l_j = lines[j].strip()
+                    if l_j == '}' or l_j.startswith('}'):
+                        end_idx = j + 1
+                        break
+                    if l_j and not l_j.startswith(('//', '/*', '*')):
+                        break
+                if end_idx is not None and end_idx > idx:
+                    indent = len(l_text) - len(l_text.lstrip())
+                    ind_str = " " * indent
+                    issues.append(Issue(
+                        id=str(uuid.uuid4()),
+                        filePath=file_path,
+                        lineNumber=idx,
+                        endLineNumber=end_idx,
+                        snippet="\n".join(lines[idx-1:end_idx]).strip(),
+                        originalCode="\n".join(lines[idx-1:end_idx]),
+                        category="error",
+                        severity="Medium",
+                        title="Empty catch Block",
+                        explanation="Swallowing exceptions with an empty catch block obscures runtime exceptions and breaks debugging.",
+                        suggestedFix=f"{ind_str}catch (err) {{\n{ind_str}  console.error('Operation failed:', err);\n{ind_str}}}",
+                        ruleId="rule-empty-catch"
+                    ))
+
     for line_idx, line in enumerate(lines, start=1):
         clean_line = line.strip()
         if not clean_line:
@@ -438,6 +484,8 @@ def scan_file_content(file_path: str, content: str) -> List[Issue]:
         for rule in COMPILED_RULES:
             if lang in rule.valid_langs or "all" in rule.valid_langs:
                 if is_comment and "TODO" not in rule.title and "Private Key" not in rule.title:
+                    continue
+                if rule.title == "Unhandled Async Call (Missing try/catch)" and is_inside_try_block(lines, line_idx - 1):
                     continue
                 if rule.pattern.search(line):
                     try:

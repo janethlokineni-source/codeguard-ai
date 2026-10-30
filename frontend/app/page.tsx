@@ -333,7 +333,7 @@ export default function Home() {
                 aiData.enhancedIssues.map((i: Issue) => [i.id, i] as [string, Issue])
               );
               const updatedIssues: Issue[] = prev.issues.map((orig) =>
-                enhMap.has(orig.id) ? enhMap.get(orig.id)! : orig
+                enhMap.has(orig.id) ? (enhMap.get(orig.id) as Issue) : orig
               );
               return {
                 ...prev,
@@ -343,7 +343,7 @@ export default function Home() {
             addToast('info', `Local Ollama AI refined ${aiData.enhancedIssues.length} solutions.`);
           }
         })
-        .catch(() => {});
+        .catch(() => { });
     } catch (err: any) {
       setErrorMsg(err.message || 'Scan failed.');
       addToast('error', 'Scan failed. Ensure FastAPI backend is running on port 8000.');
@@ -416,7 +416,7 @@ export default function Home() {
             };
           });
         }
-      } catch (err) {}
+      } catch (err) { }
     }, 600);
   };
 
@@ -449,7 +449,7 @@ export default function Home() {
     }
   };
 
-  // 6. APPLY FIX (Replaces line in editor, re-scans, updates counts)
+  // 6. APPLY FIX (Replaces line or range in editor, re-scans, updates counts)
   const applyFixToIssue = async (issue: Issue) => {
     // Switch to that file if not open
     if (activeFilePath !== issue.filePath) {
@@ -460,20 +460,23 @@ export default function Home() {
     if (!file) return;
 
     const lines = file.content.split('\n');
-    const lineIdx = issue.lineNumber - 1;
-    if (lineIdx < 0 || lineIdx >= lines.length) return;
+    const startIdx = issue.lineNumber - 1;
+    const endIdx = issue.endLineNumber ? issue.endLineNumber - 1 : startIdx;
+    if (startIdx < 0 || startIdx >= lines.length) return;
 
-    const originalLine = lines[lineIdx];
+    const countToDelete = Math.max(1, endIdx - startIdx + 1);
+    const originalText = lines.slice(startIdx, endIdx + 1).join('\n');
+    issue.originalCode = originalText;
+    issue.isApplied = true;
+
     if (issue.suggestedFix === '') {
-      lines.splice(lineIdx, 1);
+      lines.splice(startIdx, countToDelete);
     } else {
-      lines[lineIdx] = issue.suggestedFix;
+      const fixLines = issue.suggestedFix.split('\n');
+      lines.splice(startIdx, countToDelete, ...fixLines);
     }
 
     const newContent = lines.join('\n');
-    issue.originalCode = originalLine;
-    issue.isApplied = true;
-
     handleCodeChange(newContent);
     await saveFileToDisk(issue.filePath, newContent);
     addToast('success', `Fix applied to ${issue.filePath}:${issue.lineNumber}`);
@@ -486,14 +489,13 @@ export default function Home() {
     if (!file) return;
 
     const lines = file.content.split('\n');
-    const lineIdx = issue.lineNumber - 1;
+    const startIdx = issue.lineNumber - 1;
+    if (startIdx < 0 || startIdx > lines.length) return;
 
-    if (issue.suggestedFix === '') {
-      lines.splice(lineIdx, 0, issue.originalCode);
-    } else if (lineIdx < lines.length) {
-      lines[lineIdx] = issue.originalCode;
-    }
+    const origLines = issue.originalCode.split('\n');
+    const fixLineCount = issue.suggestedFix === '' ? 0 : issue.suggestedFix.split('\n').length;
 
+    lines.splice(startIdx, fixLineCount, ...origLines);
     const newContent = lines.join('\n');
     issue.isApplied = false;
 
@@ -502,7 +504,7 @@ export default function Home() {
     addToast('info', `Reverted fix on line ${issue.lineNumber}`);
   };
 
-  // APPLY ALL FIXES FOR CURRENT CATEGORY
+  // APPLY ALL FIXES FOR CURRENT CATEGORY OR ALL (REMOVE ALL ERRORS)
   const applyAllCategoryFixes = async (cat: CategoryType | 'all') => {
     const targetIssues = (scanResult?.issues || []).filter((i) => {
       if (i.isApplied || i.suggestedFix === undefined) return false;
@@ -515,7 +517,7 @@ export default function Home() {
     });
 
     if (targetIssues.length === 0) {
-      addToast('info', 'No pending fixes in this category.');
+      addToast('info', 'No pending fixes found.');
       return;
     }
 
@@ -538,14 +540,18 @@ export default function Home() {
       let lines = updatedFiles[fIdx].content.split('\n');
 
       for (const issue of issues) {
-        const idx = issue.lineNumber - 1;
-        if (idx >= 0 && idx < lines.length) {
-          issue.originalCode = lines[idx];
+        const startIdx = issue.lineNumber - 1;
+        const endIdx = issue.endLineNumber ? issue.endLineNumber - 1 : startIdx;
+        const countToDelete = Math.max(1, endIdx - startIdx + 1);
+
+        if (startIdx >= 0 && startIdx < lines.length) {
+          issue.originalCode = lines.slice(startIdx, endIdx + 1).join('\n');
           issue.isApplied = true;
           if (issue.suggestedFix === '') {
-            lines.splice(idx, 1);
+            lines.splice(startIdx, countToDelete);
           } else {
-            lines[idx] = issue.suggestedFix;
+            const fixLines = issue.suggestedFix.split('\n');
+            lines.splice(startIdx, countToDelete, ...fixLines);
           }
           appliedCount++;
         }
@@ -557,9 +563,24 @@ export default function Home() {
     }
 
     setFiles(updatedFiles);
-    // Instant re-scan
-    runScan();
-    addToast('success', `Applied ${appliedCount} fixes in ${cat === 'all' ? 'project' : cat}.`);
+
+    // Instant rescan against FastAPI backend to refresh all counts and health score
+    try {
+      const scanReqFiles = updatedFiles.map((f) => ({ path: f.path, content: f.content }));
+      const res = await fetch('http://127.0.0.1:8000/api/scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ files: scanReqFiles }),
+      });
+      if (res.ok) {
+        const freshData = await res.json();
+        setScanResult(freshData);
+      }
+    } catch {
+      runScan();
+    }
+
+    addToast('success', `Removed & cleaned ${appliedCount} errors across ${cat === 'all' ? 'project files' : cat}.`);
   };
 
   // ZIP EXPORT
@@ -816,11 +837,10 @@ export default function Home() {
                   setCategoryFilter('all');
                   setActiveTab('editor');
                 }}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold border transition-all cursor-pointer ${
-                  categoryFilter === 'all' && activeTab === 'editor'
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold border transition-all cursor-pointer ${categoryFilter === 'all' && activeTab === 'editor'
                     ? 'bg-blue-600 border-blue-500 text-white shadow-sm'
                     : 'bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                }`}
+                  }`}
               >
                 <Layers className="w-3.5 h-3.5 text-blue-400" />
                 <span>All</span>
@@ -855,55 +875,62 @@ export default function Home() {
                         setCategoryFilter(categoryFilter === item.id ? 'all' : (item.id as CategoryType));
                       }
                     }}
-                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold border transition-all cursor-pointer ${
-                      isActive
+                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold border transition-all cursor-pointer ${isActive
                         ? 'bg-blue-600 border-blue-500 text-white shadow-sm'
                         : 'bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-slate-600'
-                    }`}
+                      }`}
                   >
                     <item.icon className={`w-3.5 h-3.5 ${item.color}`} />
                     <span>{item.label}</span>
                     <span
-                      className={`px-1 py-0.2 rounded text-[10px] font-mono ${
-                        item.count > 0 ? 'bg-slate-900/80 font-bold' : 'opacity-60'
-                      }`}
+                      className={`px-1 py-0.2 rounded text-[10px] font-mono ${item.count > 0 ? 'bg-slate-900/80 font-bold' : 'opacity-60'
+                        }`}
                     >
                       {item.count}
                     </span>
                   </button>
                 );
               })}
+
+              {/* REMOVE ALL ERRORS (1-CLICK CLEANUP) */}
+              {scanResult.issues.filter(i => !i.isApplied && i.suggestedFix !== undefined).length > 0 && (
+                <button
+                  onClick={() => applyAllCategoryFixes('all')}
+                  className="flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition-all cursor-pointer border border-emerald-500/40 ml-1"
+                  title="Automatically fix and remove all detected errors in this project"
+                >
+                  <Wand2 className="w-3.5 h-3.5" />
+                  <span>Remove All Errors ({scanResult.issues.filter(i => !i.isApplied && i.suggestedFix !== undefined).length})</span>
+                </button>
+              )}
             </div>
 
             {/* TAB SWITCHER */}
             <div className="flex items-center gap-1 bg-[var(--bg-card)] p-0.5 rounded-md border border-[var(--border-color)]">
               <button
                 onClick={() => setActiveTab('editor')}
-                className={`px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer ${
-                  activeTab === 'editor'
+                className={`px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer ${activeTab === 'editor'
                     ? 'bg-blue-600 text-white shadow-sm'
                     : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                }`}
+                  }`}
               >
                 Workspace
               </button>
               <button
                 onClick={() => setActiveTab('dependencies')}
-                className={`px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer ${
-                  activeTab === 'dependencies'
+                className={`px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer ${activeTab === 'dependencies'
                     ? 'bg-blue-600 text-white shadow-sm'
                     : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                }`}
+                  }`}
               >
                 Dependencies ({categoryCounts.dependency})
               </button>
               <button
                 onClick={() => setActiveTab('practices')}
-                className={`px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer ${
-                  activeTab === 'practices'
+                className={`px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer ${activeTab === 'practices'
                     ? 'bg-blue-600 text-white shadow-sm'
                     : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                }`}
+                  }`}
               >
                 Best Practices
               </button>
