@@ -1,3 +1,4 @@
+import os
 import re
 import ast
 import json
@@ -398,25 +399,77 @@ def check_python_ast(file_path: str, content: str) -> List[Issue]:
 
 def check_json_file(file_path: str, content: str) -> List[Issue]:
     issues: List[Issue] = []
+    base_name = os.path.basename(file_path).lower()
+
+    # Fast path: standard json
     try:
         json.loads(content)
-    except json.JSONDecodeError as e:
-        lines = content.splitlines()
-        lineno = e.lineno
-        snippet = lines[lineno - 1] if lineno <= len(lines) else ""
-        issues.append(Issue(
-            id=str(uuid.uuid4()),
-            filePath=file_path,
-            lineNumber=lineno,
-            snippet=snippet.strip() or "JSON Error",
-            originalCode=snippet,
-            category="error",
-            severity="Critical",
-            title="Malformed JSON Syntax",
-            explanation=f"JSON Decode Error at line {lineno}: {e.msg}.",
-            suggestedFix=snippet.strip(),
-            ruleId="json-syntax-error"
-        ))
+        return issues
+    except Exception:
+        pass
+
+    # JSON with Comments (JSONC) is standard for TypeScript, VSCode, and tool configs
+    is_jsonc = (
+        base_name.startswith(('tsconfig', 'jsconfig', '.eslintrc', '.vscode', '.prettierrc', 'turbo', 'settings'))
+        or file_path.endswith(('.jsonc', '.code-workspace'))
+    )
+
+    # Strip comments to verify underlying structure
+    stripped = re.sub(r'/\*[\s\S]*?\*/', '', content)
+    stripped = re.sub(r'//.*', '', stripped)
+    # Strip trailing commas before } or ]
+    stripped = re.sub(r',(\s*[}\]])', r'\1', stripped)
+
+    try:
+        json.loads(stripped)
+        # If comments are expected in this file type, this is valid JSONC
+        if is_jsonc:
+            return issues
+    except Exception:
+        pass
+
+    lines = content.splitlines()
+    for line_idx, line in enumerate(lines, start=1):
+        clean = line.strip()
+        if clean.startswith(('/*', '//', '*')) or clean.endswith('*/'):
+            if not is_jsonc:
+                issues.append(Issue(
+                    id=str(uuid.uuid4()),
+                    filePath=file_path,
+                    lineNumber=line_idx,
+                    endLineNumber=line_idx,
+                    snippet=clean,
+                    originalCode=line,
+                    category="error",
+                    severity="Medium",
+                    title="Comment in Standard JSON",
+                    explanation="Strict JSON specification disallows comments. Remove comments or use JSONC.",
+                    suggestedFix="",  # Clean line removal
+                    ruleId="json-no-comments"
+                ))
+
+    if not issues:
+        try:
+            target_to_parse = stripped if is_jsonc else content
+            json.loads(target_to_parse)
+        except json.JSONDecodeError as e:
+            lineno = min(e.lineno, len(lines)) if lines else 1
+            snippet = lines[lineno - 1] if lineno <= len(lines) else ""
+            issues.append(Issue(
+                id=str(uuid.uuid4()),
+                filePath=file_path,
+                lineNumber=lineno,
+                endLineNumber=lineno,
+                snippet=snippet.strip() or "JSON Error",
+                originalCode=snippet,
+                category="error",
+                severity="Critical",
+                title="Malformed JSON Syntax",
+                explanation=f"JSON Decode Error at line {lineno}: {e.msg}.",
+                suggestedFix="",
+                ruleId="json-syntax-error"
+            ))
+
     return issues
 
 def is_inside_try_block(lines: List[str], current_line_idx: int) -> bool:

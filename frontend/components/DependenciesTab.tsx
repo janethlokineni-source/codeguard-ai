@@ -2,15 +2,25 @@
 
 import React, { useState } from 'react';
 import { DependencyItem } from '@/types/scanner';
-import { Copy, Check, AlertOctagon, AlertTriangle, ShieldCheck, Info } from 'lucide-react';
+import { Copy, Check, AlertOctagon, AlertTriangle, ShieldCheck, Info, Wand2 } from 'lucide-react';
 
 interface DependenciesTabProps {
   dependencies: DependencyItem[];
+  onFixDependency?: (dep: DependencyItem) => void;
+  onFixAllDependencies?: () => void;
 }
 
-export const DependenciesTab: React.FC<DependenciesTabProps> = ({ dependencies }) => {
+export const DependenciesTab: React.FC<DependenciesTabProps> = ({
+  dependencies,
+  onFixDependency,
+  onFixAllDependencies,
+}) => {
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [filter, setFilter] = useState<'all' | 'vulnerable' | 'outdated'>('all');
+
+  const vulnerableOrOutdated = dependencies.filter(
+    (d) => d.status === 'Known-vulnerable' || d.status === 'Deprecated' || d.status === 'Outdated'
+  );
 
   const handleCopy = (cmd: string, idx: number) => {
     navigator.clipboard.writeText(cmd);
@@ -108,9 +118,22 @@ export const DependenciesTab: React.FC<DependenciesTabProps> = ({ dependencies }
           </button>
         </div>
 
-        <span className="text-xs text-slate-500">
-          Showing {filtered.length} of {dependencies.length} packages
-        </span>
+        <div className="flex items-center gap-3">
+          {vulnerableOrOutdated.length > 0 && onFixAllDependencies && (
+            <button
+              onClick={onFixAllDependencies}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition-colors cursor-pointer"
+              title="Auto-upgrade all vulnerable and outdated packages to their latest safe versions"
+            >
+              <Wand2 className="w-3.5 h-3.5" />
+              <span>Fix All Dependencies ({vulnerableOrOutdated.length})</span>
+            </button>
+          )}
+
+          <span className="text-xs text-slate-500">
+            Showing {filtered.length} of {dependencies.length} packages
+          </span>
+        </div>
       </div>
 
       {/* Table */}
@@ -122,7 +145,7 @@ export const DependenciesTab: React.FC<DependenciesTabProps> = ({ dependencies }
               <th className="px-4 py-3">Installed</th>
               <th className="px-4 py-3">Latest</th>
               <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Remediation Command</th>
+              <th className="px-4 py-3">Remediation & Fix</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800/60">
@@ -149,7 +172,7 @@ export const DependenciesTab: React.FC<DependenciesTabProps> = ({ dependencies }
                   </div>
                 </td>
                 <td className="px-4 py-3">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <code className="text-xs bg-slate-950 px-2.5 py-1 rounded border border-slate-800 text-slate-300 font-mono">
                       {dep.upgradeCommand}
                     </code>
@@ -164,6 +187,16 @@ export const DependenciesTab: React.FC<DependenciesTabProps> = ({ dependencies }
                         <Copy className="w-3.5 h-3.5" />
                       )}
                     </button>
+                    {dep.status !== 'Safe' && onFixDependency && (
+                      <button
+                        onClick={() => onFixDependency(dep)}
+                        className="flex items-center gap-1 px-2.5 py-1 rounded bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-sm transition-colors cursor-pointer ml-1"
+                        title={`Auto-update ${dep.package} to ${dep.latestVersion} in package manifest`}
+                      >
+                        <Wand2 className="w-3 h-3" />
+                        <span>Fix This</span>
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>

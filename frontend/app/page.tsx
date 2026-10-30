@@ -268,13 +268,14 @@ export default function Home() {
   };
 
   // 3. FAST SCAN: Rule-based static scan FIRST, AI pass in background
-  const runScan = async () => {
+  const runScan = async (overrideFiles?: InMemoryFile[] | React.MouseEvent) => {
     setPhase('workspace');
     setIsScanning(true);
     setScanProgress(0);
     setErrorMsg(null);
 
-    const payloadFiles = files.map((f) => ({
+    const activeList = Array.isArray(overrideFiles) ? overrideFiles : files;
+    const payloadFiles = activeList.map((f) => ({
       path: f.path,
       content: f.content,
       size: f.size,
@@ -303,7 +304,7 @@ export default function Home() {
       setScanProgress(100);
 
       // Select first file with issues if any
-      const fileWithIssues = files.find((f) =>
+      const fileWithIssues = activeList.find((f) =>
         data.issues.some((i) => i.filePath === f.path)
       );
       if (fileWithIssues) {
@@ -477,9 +478,12 @@ export default function Home() {
     }
 
     const newContent = lines.join('\n');
+    const updatedFiles = files.map((f) => (f.path === issue.filePath ? { ...f, content: newContent } : f));
+    setFiles(updatedFiles);
     handleCodeChange(newContent);
     await saveFileToDisk(issue.filePath, newContent);
     addToast('success', `Fix applied to ${issue.filePath}:${issue.lineNumber}`);
+    await runScan(updatedFiles);
   };
 
   // UNDO FIX
@@ -564,23 +568,128 @@ export default function Home() {
 
     setFiles(updatedFiles);
 
-    // Instant rescan against FastAPI backend to refresh all counts and health score
-    try {
-      const scanReqFiles = updatedFiles.map((f) => ({ path: f.path, content: f.content }));
-      const res = await fetch('http://127.0.0.1:8000/api/scan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ files: scanReqFiles }),
-      });
-      if (res.ok) {
-        const freshData = await res.json();
-        setScanResult(freshData);
-      }
-    } catch {
-      runScan();
+    addToast('success', `Removed & cleaned ${appliedCount} errors across ${cat === 'all' ? 'project files' : cat}.`);
+    await runScan(updatedFiles);
+  };
+
+  // FIX SINGLE DEPENDENCY
+  const handleFixDependency = async (dep: DependencyItem) => {
+    const isNpm = dep.ecosystem.toLowerCase() === 'npm' || !dep.ecosystem.toLowerCase().includes('python');
+    const manifestName = isNpm ? 'package.json' : 'requirements.txt';
+
+    const mIdx = files.findIndex((f) => f.path.toLowerCase().endsWith(manifestName));
+    if (mIdx === -1) {
+      addToast('error', `Cannot find ${manifestName} in project.`);
+      return;
     }
 
-    addToast('success', `Removed & cleaned ${appliedCount} errors across ${cat === 'all' ? 'project files' : cat}.`);
+    const targetFile = files[mIdx];
+    let updatedContent = targetFile.content;
+    const cleanLatest = dep.latestVersion.replace(/^[^\d]*/, '');
+
+    if (isNpm) {
+      try {
+        const pkg = JSON.parse(targetFile.content);
+        let found = false;
+        if (pkg.dependencies && pkg.dependencies[dep.package]) {
+          const prefix = pkg.dependencies[dep.package].startsWith('^') ? '^' : 
+                         pkg.dependencies[dep.package].startsWith('~') ? '~' : '';
+          pkg.dependencies[dep.package] = `${prefix}${cleanLatest}`;
+          found = true;
+        }
+        if (pkg.devDependencies && pkg.devDependencies[dep.package]) {
+          const prefix = pkg.devDependencies[dep.package].startsWith('^') ? '^' : 
+                         pkg.devDependencies[dep.package].startsWith('~') ? '~' : '';
+          pkg.devDependencies[dep.package] = `${prefix}${cleanLatest}`;
+          found = true;
+        }
+        if (found) {
+          updatedContent = JSON.stringify(pkg, null, 2);
+        } else {
+          const reg = new RegExp(`("${dep.package}"\\s*:\\s*")[^"]+(")`, 'g');
+          updatedContent = updatedContent.replace(reg, `$1^${cleanLatest}$2`);
+        }
+      } catch {
+        const reg = new RegExp(`("${dep.package}"\\s*:\\s*")[^"]+(")`, 'g');
+        updatedContent = updatedContent.replace(reg, `$1^${cleanLatest}$2`);
+      }
+    } else {
+      const reg = new RegExp(`^(${dep.package}\\s*(?:==|>=|<=|~=)?\\s*).*$`, 'im');
+      updatedContent = updatedContent.replace(reg, `${dep.package}==${cleanLatest}`);
+    }
+
+    const updatedFiles = files.map((f, i) => (i === mIdx ? { ...f, content: updatedContent } : f));
+    setFiles(updatedFiles);
+    await saveFileToDisk(targetFile.path, updatedContent);
+    addToast('success', `Updated ${dep.package} to ${dep.latestVersion} in ${targetFile.path}`);
+    await runScan(updatedFiles);
+  };
+
+  // FIX ALL DEPENDENCIES
+  const handleFixAllDependencies = async () => {
+    const vulnerableDeps = (scanResult?.dependencies || []).filter(
+      (d) => d.status === 'Known-vulnerable' || d.status === 'Deprecated' || d.status === 'Outdated'
+    );
+    if (vulnerableDeps.length === 0) {
+      addToast('info', 'All dependencies are already safe and up to date.');
+      return;
+    }
+
+    let updatedFiles = [...files];
+    let fixedCount = 0;
+
+    for (const dep of vulnerableDeps) {
+      const isNpm = dep.ecosystem.toLowerCase() === 'npm' || !dep.ecosystem.toLowerCase().includes('python');
+      const manifestName = isNpm ? 'package.json' : 'requirements.txt';
+      const mIdx = updatedFiles.findIndex((f) => f.path.toLowerCase().endsWith(manifestName));
+      if (mIdx === -1) continue;
+
+      let content = updatedFiles[mIdx].content;
+      const cleanLatest = dep.latestVersion.replace(/^[^\d]*/, '');
+
+      if (isNpm) {
+        try {
+          const pkg = JSON.parse(content);
+          let found = false;
+          if (pkg.dependencies && pkg.dependencies[dep.package]) {
+            const prefix = pkg.dependencies[dep.package].startsWith('^') ? '^' : '';
+            pkg.dependencies[dep.package] = `${prefix}${cleanLatest}`;
+            found = true;
+          }
+          if (pkg.devDependencies && pkg.devDependencies[dep.package]) {
+            const prefix = pkg.devDependencies[dep.package].startsWith('^') ? '^' : '';
+            pkg.devDependencies[dep.package] = `${prefix}${cleanLatest}`;
+            found = true;
+          }
+          if (found) {
+            content = JSON.stringify(pkg, null, 2);
+          } else {
+            const reg = new RegExp(`("${dep.package}"\\s*:\\s*")[^"]+(")`, 'g');
+            content = content.replace(reg, `$1^${cleanLatest}$2`);
+          }
+        } catch {
+          const reg = new RegExp(`("${dep.package}"\\s*:\\s*")[^"]+(")`, 'g');
+          content = content.replace(reg, `$1^${cleanLatest}$2`);
+        }
+      } else {
+        const reg = new RegExp(`^(${dep.package}\\s*(?:==|>=|<=|~=)?\\s*).*$`, 'im');
+        content = content.replace(reg, `${dep.package}==${cleanLatest}`);
+      }
+
+      updatedFiles[mIdx] = { ...updatedFiles[mIdx], content };
+      fixedCount++;
+    }
+
+    for (const f of updatedFiles) {
+      const orig = files.find((of) => of.path === f.path);
+      if (orig && orig.content !== f.content) {
+        await saveFileToDisk(f.path, f.content);
+      }
+    }
+
+    setFiles(updatedFiles);
+    addToast('success', `Updated & secured ${fixedCount} packages in manifest.`);
+    await runScan(updatedFiles);
   };
 
   // ZIP EXPORT
@@ -1001,7 +1110,11 @@ export default function Home() {
           {/* TAB 2: DEPENDENCIES */}
           {activeTab === 'dependencies' && (
             <div className="flex-1 p-6 overflow-y-auto max-w-6xl w-full mx-auto">
-              <DependenciesTab dependencies={scanResult.dependencies} />
+              <DependenciesTab
+                dependencies={scanResult.dependencies}
+                onFixDependency={handleFixDependency}
+                onFixAllDependencies={handleFixAllDependencies}
+              />
             </div>
           )}
 

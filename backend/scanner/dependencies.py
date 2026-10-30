@@ -90,6 +90,24 @@ KNOWN_PY_PACKAGES = {
 def clean_version(v: str) -> str:
     return re.sub(r"""^[~^>=<\s]+""", "", v).strip()
 
+def parse_version_tuple(v: str):
+    cleaned = clean_version(v)
+    parts = []
+    for p in re.findall(r'\d+', cleaned):
+        try:
+            parts.append(int(p))
+        except ValueError:
+            pass
+    return tuple(parts) if parts else (0,)
+
+def is_version_less(v1: str, v2: str) -> bool:
+    t1 = parse_version_tuple(v1)
+    t2 = parse_version_tuple(v2)
+    max_len = max(len(t1), len(t2))
+    padded_t1 = t1 + (0,) * (max_len - len(t1))
+    padded_t2 = t2 + (0,) * (max_len - len(t2))
+    return padded_t1 < padded_t2
+
 def check_package_json(content: str) -> List[DependencyItem]:
     items: List[DependencyItem] = []
     try:
@@ -113,10 +131,10 @@ def check_package_json(content: str) -> List[DependencyItem]:
             if info["deprecated"]:
                 status = "Deprecated"
                 vuln = "Package is officially unmaintained or deprecated by author."
-            elif cleaned < info["vuln_below"]:
+            elif is_version_less(cleaned, info["vuln_below"]):
                 status = "Known-vulnerable"
                 vuln = info["vuln_info"]
-            elif cleaned < info["latest"]:
+            elif is_version_less(cleaned, info["latest"]):
                 status = "Outdated"
 
             items.append(DependencyItem(
@@ -155,10 +173,10 @@ def check_requirements_txt(content: str) -> List[DependencyItem]:
             if info:
                 status = "Safe"
                 vuln = None
-                if current != "unpinned" and current < info["vuln_below"]:
+                if current != "unpinned" and is_version_less(current, info["vuln_below"]):
                     status = "Known-vulnerable"
                     vuln = info["vuln_info"]
-                elif current != "unpinned" and current < info["latest"]:
+                elif current != "unpinned" and is_version_less(current, info["latest"]):
                     status = "Outdated"
 
                 items.append(DependencyItem(
