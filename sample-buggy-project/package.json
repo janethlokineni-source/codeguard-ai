@@ -1,0 +1,13 @@
+{
+  "name": "hackathon-sample-project",
+  "version": "1.0.0",
+  "description": "Demonstration project with vulnerabilities and outdated dependencies",
+  "dependencies": {
+    "axios": "0.21.1",
+    "express": "4.16.0",
+    "lodash": "4.17.15",
+    "moment": "2.24.0",
+    "jsonwebtoken": "8.5.1"
+  }
+}
+
