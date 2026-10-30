@@ -9,7 +9,7 @@
 
 In fast-paced hackathons, team members (frontend, backend, database, UI) write code in silos. When merging branches right before judging, broken builds, security holes, unhandled exceptions, and outdated packages run rampant.
 
-**CODEGUARD AI** allows your team to upload an entire project folder and instantly get a full audit report with actionable side-by-side code fixes, dependency remediation commands, and an animated Project Health Score.
+**CODEGUARD AI** allows your team to upload an entire project folder and instantly get a full audit report with actionable side-by-side code fixes, dependency remediation commands, and an     animated Project Health Score.
 
 ---
 

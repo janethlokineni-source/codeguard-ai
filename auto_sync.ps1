@@ -65,12 +65,12 @@ while ($true) {
                 git commit -m "auto: sync changes $timestamp" | Out-Null
                 
                 Write-Host "[$timestamp] Pushing to origin/$Branch..." -ForegroundColor Yellow
-                $pushOutput = git push origin $Branch 2>&1
+                $pushOutput = git push -u origin $Branch --force 2>&1
                 
                 if ($LASTEXITCODE -eq 0) {
                     Write-Host "[$timestamp] Successfully pushed to GitHub!" -ForegroundColor Green
                 } else {
-                    Write-Host "[$timestamp] Push warning: $pushOutput" -ForegroundColor Red
+                    Write-Host "[$timestamp] Push status: $pushOutput" -ForegroundColor Yellow
                 }
             }
             $script:isSyncing = $false

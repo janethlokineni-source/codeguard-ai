@@ -5,7 +5,7 @@ echo ========================================================
 echo Remote: https://github.com/janethlokineni-source/codeguard-ai.git
 echo Branch: main
 echo.
-git push -u origin main
+git push -u origin main --force
 echo.
 echo ========================================================
 pause
