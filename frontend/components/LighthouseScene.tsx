@@ -360,9 +360,18 @@ export const LighthouseScene: React.FC<LighthouseSceneProps> = ({
 
       const elapsed = clock.getElapsedTime();
 
+      const stopAngleAtRight = Math.PI * 0.38; // ~68.4° pointing toward the right side!
+
       if (!isReducedRef.current) {
-        // Horizontal beam sweep from right to left smoothly
-        beamGroup.rotation.y = -elapsed * 0.72;
+        // Complete 1 smooth sweep and stop pointing toward the right side
+        const sweepDuration = 2.4;
+        if (elapsed < sweepDuration) {
+          const progress = elapsed / sweepDuration;
+          beamGroup.rotation.y = (stopAngleAtRight - Math.PI * 2) + progress * (Math.PI * 2);
+        } else {
+          // Stop securely at the right side
+          beamGroup.rotation.y = stopAngleAtRight;
+        }
 
         // Gentle ocean waves undulating
         const pos = oceanGeo.attributes.position;
@@ -376,8 +385,8 @@ export const LighthouseScene: React.FC<LighthouseSceneProps> = ({
         }
         pos.needsUpdate = true;
       } else {
-        // Static cinematic beam position for reduced motion
-        beamGroup.rotation.y = -Math.PI * 0.35;
+        // Static beam position pointing toward the right side
+        beamGroup.rotation.y = stopAngleAtRight;
       }
 
       renderer.render(scene, camera);

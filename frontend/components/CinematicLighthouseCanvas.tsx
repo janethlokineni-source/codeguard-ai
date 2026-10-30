@@ -349,8 +349,8 @@ export const CinematicLighthouseCanvas: React.FC<CinematicLighthouseCanvasProps>
     let dropStartTime = 0;
     let sweepStartTime = 0;
     let sweepTotalAngle = 0;
-    // Exactly pointing toward the right-side login area:
-    const stopAngleAtRight = -Math.PI * 0.32;
+    // Exactly pointing toward the right-side login area (positive angle):
+    const stopAngleAtRight = Math.PI * 0.38; // ~68.4° pointing toward the right side!
 
     let animationFrameId: number;
     const clock = new THREE.Clock();
@@ -410,16 +410,16 @@ export const CinematicLighthouseCanvas: React.FC<CinematicLighthouseCanvasProps>
         if (sweepStartTime === 0) sweepStartTime = now;
         const sweepElapsed = now - sweepStartTime;
 
-        // Rotate 360 degrees (2 * PI radians) in ~2.0 seconds
+        // Rotate 360 degrees in ~2.0 seconds, smoothly stopping at the right side
         const rotationDuration = 2.0;
-        const targetSweepAngle = Math.PI * 2 + Math.abs(stopAngleAtRight);
 
         if (sweepElapsed < rotationDuration) {
           const progress = sweepElapsed / rotationDuration;
-          sweepTotalAngle = progress * targetSweepAngle;
-          beamGroup.rotation.y = -sweepTotalAngle;
+          // Sweeps 360 degrees and arrives precisely at stopAngleAtRight:
+          const angle = (stopAngleAtRight - Math.PI * 2) + progress * (Math.PI * 2);
+          beamGroup.rotation.y = angle;
         } else {
-          // Exactly arrived at the right side stop position!
+          // Stop securely at the right side!
           beamGroup.rotation.y = stopAngleAtRight;
           if (!beamLockedRef.current) {
             beamLockedRef.current = true;
@@ -427,7 +427,7 @@ export const CinematicLighthouseCanvas: React.FC<CinematicLighthouseCanvasProps>
           }
         }
       } else if (currentStage === 'login_popup') {
-        // Locked spotlight shining on the right-side login popup!
+        // Locked spotlight firmly stopped at the right side, illuminating the login popup!
         lighthouseGroup.position.y = targetLandedY;
         beamGroup.rotation.y = stopAngleAtRight;
 
@@ -518,3 +518,4 @@ export const CinematicLighthouseCanvas: React.FC<CinematicLighthouseCanvasProps>
     </div>
   );
 };
+
