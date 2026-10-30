@@ -35,6 +35,7 @@ import { ConfirmModal } from '@/components/ConfirmModal';
 import { Logo } from '@/components/ui/Logo';
 import { StatusChip } from '@/components/ui/StatusChip';
 import { PageBackground } from '@/components/ui/PageBackground';
+import { CinematicLoginIntro } from '@/components/CinematicLoginIntro';
 
 // Lazy-load Monaco Editor for ultra-fast initial page load
 const MonacoCodeWorkspace = dynamic(
@@ -122,6 +123,7 @@ export default function Home() {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [confirmLeaveOpen, setConfirmLeaveOpen] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [showIntro, setShowIntro] = useState<boolean>(true);
 
   const folderInputRef = useRef<HTMLInputElement>(null);
   const filesInputRef = useRef<HTMLInputElement>(null);
@@ -735,7 +737,11 @@ export default function Home() {
   const activeFile = files.find((f) => f.path === activeFilePath);
 
   return (
-    <PageBackground className="min-h-screen flex flex-col text-[var(--text-primary)]">
+    <>
+      {showIntro && (
+        <CinematicLoginIntro onComplete={() => setShowIntro(false)} />
+      )}
+      <PageBackground className="min-h-screen flex flex-col text-[var(--text-primary)]">
       <ToastContainer toasts={toasts} onDismiss={removeToast} />
 
       <ConfirmModal
@@ -782,14 +788,14 @@ export default function Home() {
             </>
           )}
 
-          <a
-            href="/login"
+          <button
+            onClick={() => setShowIntro(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#190f24] hover:bg-[#231533] text-[#f6e7dc] text-xs font-medium border border-[rgba(201,119,127,0.25)] transition-all cursor-pointer shadow-sm"
-            title="Account / Session"
+            title="Sign in / Account Session"
           >
             <span className="w-2 h-2 rounded-full bg-[#f0c98a]"></span>
             <span>Sign in</span>
-          </a>
+          </button>
         </div>
 
         {/* Dynamic Scanning Line */}
@@ -1145,5 +1151,6 @@ export default function Home() {
         </div>
       )}
     </PageBackground>
+    </>
   );
 }
