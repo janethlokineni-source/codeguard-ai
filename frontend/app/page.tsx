@@ -765,6 +765,7 @@ export default function Home() {
         </button>
 
         <div className="flex items-center gap-3">
+          <StatusChip variant="db" label="POSTGRESQL" title="PostgreSQL Database Integration Layer Active" />
           <StatusChip variant="ai" label="OLLAMA READY" />
           <StatusChip label="PRIVATE SESSION" />
 

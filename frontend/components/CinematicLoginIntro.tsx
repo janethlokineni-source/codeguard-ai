@@ -102,6 +102,16 @@ export const CinematicLoginIntro: React.FC<CinematicLoginIntroProps> = ({
     if (typeof window !== 'undefined') {
       localStorage.setItem('clyro_auth', 'true');
     }
+    // Attempt to persist to PostgreSQL backend
+    fetch('http://localhost:8000/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: email || 'developer@clyro.local',
+        password: password || 'session_token',
+      }),
+    }).catch(() => {});
+
     setTimeout(() => {
       setIsExiting(true);
       setTimeout(() => {

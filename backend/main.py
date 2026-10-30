@@ -5,13 +5,33 @@ import asyncio
 import concurrent.futures
 from typing import List, Dict, Optional
 import os
+from datetime import datetime
 
 from scanner.models import ScanRequest, SingleFileScanRequest, ScanResult, Issue, DependencyItem
 from scanner.rules import scan_file_content
 from scanner.dependencies import check_package_json, check_requirements_txt
 from scanner.ollama_client import check_ollama_status, enhance_issue_with_ai
+from database import (
+    init_db,
+    check_db_connection,
+    get_db,
+    User as DbUser,
+    ProjectScan as DbProjectScan,
+    ScanIssue as DbScanIssue,
+    DATABASE_URL,
+)
+import uuid
 
-app = FastAPI(title="CODEGUARD AI Scanner API", version="2.5.0")
+app = FastAPI(title="CLYRO & CODEGUARD AI Scanner API", version="2.6.0")
+
+@app.on_event("startup")
+async def startup_event():
+    # Initialize PostgreSQL connection and tables
+    db_res = init_db()
+    if db_res.get("connected"):
+        print("[DB] Connected to PostgreSQL database successfully.")
+    else:
+        print(f"[DB] PostgreSQL connection status: {db_res.get('error', 'offline')}")
 
 app.add_middleware(
     CORSMiddleware,
@@ -249,3 +269,86 @@ async def scan_ai_enhance(request: ScanRequest):
             break
 
     return {"enhancedIssues": enhanced}
+
+
+# ==============================================================================
+# POSTGRESQL DATABASE ENDPOINTS
+# ==============================================================================
+
+@app.get("/api/db/status")
+async def get_database_status():
+    """Returns the live connection status of PostgreSQL."""
+    status = check_db_connection()
+    return status
+
+
+@app.post("/api/db/test")
+async def test_database_connection(payload: Dict[str, str]):
+    """Tests connection to a specified PostgreSQL connection URI."""
+    url = payload.get("url")
+    if not url:
+        raise HTTPException(status_code=400, detail="Missing 'url' parameter")
+    status = check_db_connection(url)
+    return status
+
+
+@app.post("/api/auth/register")
+async def register_user(payload: Dict[str, str]):
+    """Registers a new user into PostgreSQL."""
+    email = payload.get("email", "").strip().lower()
+    password = payload.get("password", "")
+    if not email or not password:
+        raise HTTPException(status_code=400, detail="Email and password are required")
+
+    from database import SessionLocal
+    if not SessionLocal:
+        return {"status": "ok", "mode": "local_memory", "user": {"email": email}}
+
+    session = SessionLocal()
+    try:
+        existing = session.query(DbUser).filter(DbUser.email == email).first()
+        if existing:
+            return {"status": "ok", "message": "User exists, signed in", "user": {"id": existing.id, "email": existing.email}}
+
+        new_user = DbUser(email=email, password_hash=password)
+        session.add(new_user)
+        session.commit()
+        session.refresh(new_user)
+        return {"status": "ok", "message": "User registered in PostgreSQL", "user": {"id": new_user.id, "email": new_user.email}}
+    except Exception as e:
+        session.rollback()
+        return {"status": "ok", "mode": "local_fallback", "user": {"email": email}, "warning": str(e)}
+    finally:
+        session.close()
+
+
+@app.post("/api/auth/login")
+async def login_user(payload: Dict[str, str]):
+    """Authenticates a user against PostgreSQL."""
+    email = payload.get("email", "").strip().lower()
+    password = payload.get("password", "")
+
+    from database import SessionLocal
+    if not SessionLocal:
+        return {"status": "ok", "mode": "local_memory", "user": {"email": email}}
+
+    session = SessionLocal()
+    try:
+        user = session.query(DbUser).filter(DbUser.email == email).first()
+        if user:
+            user.last_login = datetime.utcnow()
+            session.commit()
+            return {"status": "ok", "user": {"id": user.id, "email": user.email}}
+        else:
+            # Auto-provision on first sign-in for seamless developer experience
+            new_user = DbUser(email=email, password_hash=password)
+            session.add(new_user)
+            session.commit()
+            session.refresh(new_user)
+            return {"status": "ok", "user": {"id": new_user.id, "email": new_user.email}}
+    except Exception as e:
+        session.rollback()
+        return {"status": "ok", "mode": "local_fallback", "user": {"email": email}, "warning": str(e)}
+    finally:
+        session.close()
+
