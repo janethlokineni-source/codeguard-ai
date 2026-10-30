@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import {
   FolderPlus,
@@ -789,6 +790,14 @@ export default function Home() {
             </>
           )}
 
+          <Link
+            href="/admin"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#20102e] hover:bg-[#2d1840] text-[#f0c98a] hover:text-[#fff5e0] text-xs font-semibold border border-[rgba(240,201,138,0.35)] transition-all cursor-pointer shadow-sm group"
+            title="Open Security Administration and Audit Trail"
+          >
+            <Shield className="w-3.5 h-3.5 text-[#f0c98a] group-hover:scale-110 transition-transform" />
+            <span>Admin</span>
+          </Link>
           <button
             onClick={() => setShowIntro(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#190f24] hover:bg-[#231533] text-[#f6e7dc] text-xs font-medium border border-[rgba(201,119,127,0.25)] transition-all cursor-pointer shadow-sm"

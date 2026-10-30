@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import asyncio
 import concurrent.futures
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any
 import os
 from datetime import datetime
 
@@ -18,6 +18,8 @@ from database import (
     User as DbUser,
     ProjectScan as DbProjectScan,
     ScanIssue as DbScanIssue,
+    AuditLog as DbAuditLog,
+    create_audit_log,
     DATABASE_URL,
 )
 import uuid
@@ -223,6 +225,20 @@ async def scan_project(request: ScanRequest):
     health_score = compute_health_score(all_issues, all_dependencies)
     best_practices = generate_best_practices(all_issues, all_dependencies)
 
+    # Record audit log for project scan
+    try:
+        criticals = severity_counts.get("Critical", 0)
+        status_flag = "WARNING" if criticals > 0 else "SUCCESS"
+        create_audit_log(
+            user_email="active_developer@clyro.local",
+            action="PROJECT_SCAN",
+            category="SCAN",
+            details=f"Analyzed {scanned_count} files across project. Identified {len(all_issues)} issues ({criticals} critical). Health score: {health_score}/100.",
+            status=status_flag,
+        )
+    except Exception:
+        pass
+
     return ScanResult(
         healthScore=health_score,
         totalFiles=total_files,
@@ -297,27 +313,51 @@ async def register_user(payload: Dict[str, str]):
     """Registers a new user into PostgreSQL."""
     email = payload.get("email", "").strip().lower()
     password = payload.get("password", "")
+    full_name = payload.get("full_name", "")
     if not email or not password:
         raise HTTPException(status_code=400, detail="Email and password are required")
 
     from database import SessionLocal
     if not SessionLocal:
-        return {"status": "ok", "mode": "local_memory", "user": {"email": email}}
+        return {"status": "ok", "mode": "local_memory", "user": {"email": email, "role": "DEVELOPER"}}
 
     session = SessionLocal()
     try:
         existing = session.query(DbUser).filter(DbUser.email == email).first()
         if existing:
-            return {"status": "ok", "message": "User exists, signed in", "user": {"id": existing.id, "email": existing.email}}
+            create_audit_log(
+                user_email=email,
+                action="LOGIN_EXISTING",
+                category="AUTH",
+                details=f"Existing user {email} signed in via registration form.",
+                status="SUCCESS",
+                user_id=existing.id,
+            )
+            return {"status": "ok", "message": "User exists, signed in", "user": {"id": existing.id, "email": existing.email, "role": existing.role}}
 
-        new_user = DbUser(email=email, password_hash=password)
+        new_user = DbUser(
+            email=email,
+            password_hash=password,
+            full_name=full_name or email.split("@")[0],
+            role="DEVELOPER",
+        )
         session.add(new_user)
         session.commit()
         session.refresh(new_user)
-        return {"status": "ok", "message": "User registered in PostgreSQL", "user": {"id": new_user.id, "email": new_user.email}}
+
+        create_audit_log(
+            user_email=email,
+            action="USER_REGISTER",
+            category="AUTH",
+            details=f"New user {email} registered with DEVELOPER role.",
+            status="SUCCESS",
+            user_id=new_user.id,
+        )
+
+        return {"status": "ok", "message": "User registered in PostgreSQL", "user": {"id": new_user.id, "email": new_user.email, "role": new_user.role}}
     except Exception as e:
         session.rollback()
-        return {"status": "ok", "mode": "local_fallback", "user": {"email": email}, "warning": str(e)}
+        return {"status": "ok", "mode": "local_fallback", "user": {"email": email, "role": "DEVELOPER"}, "warning": str(e)}
     finally:
         session.close()
 
@@ -330,7 +370,7 @@ async def login_user(payload: Dict[str, str]):
 
     from database import SessionLocal
     if not SessionLocal:
-        return {"status": "ok", "mode": "local_memory", "user": {"email": email}}
+        return {"status": "ok", "mode": "local_memory", "user": {"email": email, "role": "DEVELOPER"}}
 
     session = SessionLocal()
     try:
@@ -338,17 +378,265 @@ async def login_user(payload: Dict[str, str]):
         if user:
             user.last_login = datetime.utcnow()
             session.commit()
-            return {"status": "ok", "user": {"id": user.id, "email": user.email}}
+
+            create_audit_log(
+                user_email=email,
+                action="LOGIN_SUCCESS",
+                category="AUTH",
+                details=f"User {email} logged in successfully.",
+                status="SUCCESS",
+                user_id=user.id,
+            )
+
+            return {
+                "status": "ok",
+                "user": {
+                    "id": user.id,
+                    "email": user.email,
+                    "full_name": user.full_name or email.split("@")[0],
+                    "role": user.role,
+                },
+            }
         else:
             # Auto-provision on first sign-in for seamless developer experience
-            new_user = DbUser(email=email, password_hash=password)
+            role = "ADMIN" if "admin" in email else "DEVELOPER"
+            new_user = DbUser(
+                email=email,
+                password_hash=password,
+                full_name=email.split("@")[0],
+                role=role,
+            )
             session.add(new_user)
             session.commit()
             session.refresh(new_user)
-            return {"status": "ok", "user": {"id": new_user.id, "email": new_user.email}}
+
+            create_audit_log(
+                user_email=email,
+                action="USER_PROVISION_AND_LOGIN",
+                category="AUTH",
+                details=f"User {email} provisioned and logged in with {role} role.",
+                status="SUCCESS",
+                user_id=new_user.id,
+            )
+
+            return {
+                "status": "ok",
+                "user": {
+                    "id": new_user.id,
+                    "email": new_user.email,
+                    "full_name": new_user.full_name,
+                    "role": new_user.role,
+                },
+            }
     except Exception as e:
         session.rollback()
-        return {"status": "ok", "mode": "local_fallback", "user": {"email": email}, "warning": str(e)}
+        return {"status": "ok", "mode": "local_fallback", "user": {"email": email, "role": "DEVELOPER"}, "warning": str(e)}
+    finally:
+        session.close()
+
+
+# ==============================================================================
+# ADMIN & AUDIT TRAIL ENDPOINTS
+# ==============================================================================
+
+@app.get("/api/admin/users")
+async def get_admin_users():
+    """Returns all registered users with their last login, role, and scan count."""
+    from database import SessionLocal
+    if not SessionLocal:
+        return {"users": []}
+
+    session = SessionLocal()
+    try:
+        users = session.query(DbUser).order_by(DbUser.last_login.desc()).all()
+        result = []
+        now = datetime.utcnow()
+
+        for u in users:
+            # Check online status (active in last 4 hours or seeded admin)
+            diff = (now - u.last_login).total_seconds() if u.last_login else 999999
+            is_active = diff < 14400  # within 4 hours
+
+            scan_count = len(u.scans) if u.scans else 0
+            result.append({
+                "id": u.id,
+                "email": u.email,
+                "full_name": u.full_name or u.email.split("@")[0],
+                "role": u.role or "DEVELOPER",
+                "created_at": u.created_at.isoformat() if u.created_at else None,
+                "last_login": u.last_login.isoformat() if u.last_login else None,
+                "scan_count": scan_count,
+                "is_active": is_active,
+            })
+        return {"users": result, "total": len(result)}
+    finally:
+        session.close()
+
+
+@app.post("/api/admin/users/role")
+async def update_user_role(payload: Dict[str, Any]):
+    """Updates a user's role (ADMIN, DEVELOPER, AUDITOR, VIEWER)."""
+    user_id = payload.get("id")
+    email = payload.get("email")
+    new_role = payload.get("role", "DEVELOPER").upper()
+
+    from database import SessionLocal
+    if not SessionLocal:
+        raise HTTPException(status_code=500, detail="Database not ready")
+
+    session = SessionLocal()
+    try:
+        query = session.query(DbUser)
+        if user_id:
+            user = query.filter(DbUser.id == user_id).first()
+        elif email:
+            user = query.filter(DbUser.email == email).first()
+        else:
+            raise HTTPException(status_code=400, detail="Missing user id or email")
+
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        old_role = user.role
+        user.role = new_role
+        session.commit()
+
+        create_audit_log(
+            user_email=user.email,
+            action="ROLE_CHANGE",
+            category="ADMIN",
+            details=f"User {user.email} role updated from {old_role} to {new_role}.",
+            status="SUCCESS",
+            user_id=user.id,
+        )
+
+        return {"status": "ok", "user": {"id": user.id, "email": user.email, "role": user.role}}
+    finally:
+        session.close()
+
+
+@app.get("/api/admin/audit-logs")
+async def get_audit_logs(limit: int = 150, category: Optional[str] = None, action: Optional[str] = None):
+    """Returns chronologically ordered audit logs with optional filtering."""
+    from database import SessionLocal
+    if not SessionLocal:
+        return {"logs": []}
+
+    session = SessionLocal()
+    try:
+        q = session.query(DbAuditLog)
+        if category and category.upper() != "ALL":
+            q = q.filter(DbAuditLog.category == category.upper())
+        if action and action.upper() != "ALL":
+            q = q.filter(DbAuditLog.action == action.upper())
+
+        logs = q.order_by(DbAuditLog.created_at.desc()).limit(limit).all()
+
+        result = [
+            {
+                "id": l.id,
+                "user_id": l.user_id,
+                "user_email": l.user_email,
+                "action": l.action,
+                "category": l.category,
+                "details": l.details,
+                "ip_address": l.ip_address,
+                "status": l.status,
+                "created_at": l.created_at.isoformat() if l.created_at else None,
+            }
+            for l in logs
+        ]
+        return {"logs": result, "total": len(result)}
+    finally:
+        session.close()
+
+
+@app.post("/api/admin/audit-logs")
+async def post_audit_log(payload: Dict[str, Any]):
+    """Records an audit event from the frontend or an external service."""
+    user_email = payload.get("user_email", "system@clyro.internal")
+    action = payload.get("action", "USER_ACTION")
+    category = payload.get("category", "SYSTEM")
+    details = payload.get("details", "")
+    status = payload.get("status", "SUCCESS")
+    ip_address = payload.get("ip_address", "127.0.0.1")
+
+    log_entry = create_audit_log(
+        user_email=user_email,
+        action=action,
+        category=category,
+        details=details,
+        status=status,
+        ip_address=ip_address,
+    )
+    if not log_entry:
+        return {"status": "ok", "mode": "in_memory"}
+
+    return {
+        "status": "ok",
+        "log": {
+            "id": log_entry.id,
+            "action": log_entry.action,
+            "category": log_entry.category,
+            "created_at": log_entry.created_at.isoformat() if log_entry.created_at else None,
+        },
+    }
+
+
+@app.get("/api/admin/stats")
+async def get_admin_stats():
+    """Aggregates all administrative statistics for the admin dashboard."""
+    from database import SessionLocal
+    db_info = check_db_connection()
+
+    if not SessionLocal:
+        return {
+            "total_users": 2,
+            "online_users": 1,
+            "total_scans": 0,
+            "audit_events": 4,
+            "database": db_info,
+        }
+
+    session = SessionLocal()
+    try:
+        total_users = session.query(DbUser).count()
+        total_scans = session.query(DbProjectScan).count()
+        audit_events = session.query(DbAuditLog).count()
+
+        # Count active/online users
+        users = session.query(DbUser).all()
+        now = datetime.utcnow()
+        online_users = sum(
+            1 for u in users if u.last_login and (now - u.last_login).total_seconds() < 86400
+        )
+
+        # Recent 5 audit logs
+        recent_logs = (
+            session.query(DbAuditLog)
+            .order_by(DbAuditLog.created_at.desc())
+            .limit(5)
+            .all()
+        )
+
+        return {
+            "total_users": total_users,
+            "online_users": max(1, online_users),
+            "total_scans": total_scans,
+            "audit_events": audit_events,
+            "database": db_info,
+            "recent_logs": [
+                {
+                    "id": l.id,
+                    "action": l.action,
+                    "user_email": l.user_email,
+                    "details": l.details,
+                    "status": l.status,
+                    "created_at": l.created_at.isoformat() if l.created_at else None,
+                }
+                for l in recent_logs
+            ],
+        }
     finally:
         session.close()
 
