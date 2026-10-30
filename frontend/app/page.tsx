@@ -35,6 +35,7 @@ import { ConfirmModal } from '@/components/ConfirmModal';
 import { Logo } from '@/components/ui/Logo';
 import { StatusChip } from '@/components/ui/StatusChip';
 import { PageBackground } from '@/components/ui/PageBackground';
+import LoginPage from './login/page';
 
 // Lazy-load Monaco Editor for ultra-fast initial page load
 const MonacoCodeWorkspace = dynamic(
@@ -122,6 +123,20 @@ export default function Home() {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [confirmLeaveOpen, setConfirmLeaveOpen] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [authChecked, setAuthChecked] = useState<boolean>(false);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('clyro_auth');
+      if (stored === 'true') {
+        setIsAuthenticated(true);
+      }
+    } catch (e) {
+      // ignore
+    }
+    setAuthChecked(true);
+  }, []);
 
   const folderInputRef = useRef<HTMLInputElement>(null);
   const filesInputRef = useRef<HTMLInputElement>(null);
@@ -734,6 +749,11 @@ export default function Home() {
 
   const activeFile = files.find((f) => f.path === activeFilePath);
 
+  // When opening the website, show the polished login page first
+  if (!isAuthenticated) {
+    return <LoginPage onSuccess={() => setIsAuthenticated(true)} />;
+  }
+
   return (
     <PageBackground className="min-h-screen flex flex-col text-[var(--text-primary)]">
       <ToastContainer toasts={toasts} onDismiss={removeToast} />
@@ -782,14 +802,22 @@ export default function Home() {
             </>
           )}
 
-          <a
-            href="/login"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#190f24] hover:bg-[#231533] text-[#f6e7dc] text-xs font-medium border border-[rgba(201,119,127,0.25)] transition-all cursor-pointer shadow-sm"
-            title="Account / Session"
+          <button
+            onClick={() => {
+              try {
+                localStorage.removeItem('clyro_auth');
+              } catch (e) {
+                // ignore
+              }
+              setIsAuthenticated(false);
+              resetToHome();
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#190f24] hover:bg-[#231533] text-[#b8a5b8] hover:text-[#f6e7dc] text-xs font-medium border border-[rgba(201,119,127,0.25)] transition-all cursor-pointer shadow-sm"
+            title="Sign out of private session"
           >
-            <span className="w-2 h-2 rounded-full bg-[#f0c98a]"></span>
-            <span>Sign in</span>
-          </a>
+            <span className="w-1.5 h-1.5 rounded-full bg-[#86efac]"></span>
+            <span>Sign out</span>
+          </button>
         </div>
 
         {/* Dynamic Scanning Line */}

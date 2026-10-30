@@ -31,7 +31,11 @@ const LighthouseScene = dynamic(
   }
 );
 
-export default function LoginPage() {
+interface LoginPageProps {
+  onSuccess?: () => void;
+}
+
+export default function LoginPage({ onSuccess }: LoginPageProps = {}) {
   const router = useRouter();
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
@@ -40,12 +44,24 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
 
+  const handleAuthSuccess = () => {
+    setIsLoading(true);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('clyro_auth', 'true');
+    }
+    setTimeout(() => {
+      setIsLoading(false);
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        router.push('/');
+      }
+    }, 400);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    setTimeout(() => {
-      router.push('/');
-    }, 600);
+    handleAuthSuccess();
   };
 
   return (
@@ -264,7 +280,7 @@ export default function LoginPage() {
             {/* GitHub Sign-In Button */}
             <button
               type="button"
-              onClick={() => router.push('/')}
+              onClick={handleAuthSuccess}
               className="w-full h-10 rounded-xl bg-[#0f0816] hover:bg-[#1d1326] border border-[rgba(201,119,127,0.22)] hover:border-[#c9777f]/50 text-xs font-medium text-[#f6e7dc] flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm"
             >
               <svg className="w-4 h-4 text-[#f0c98a] fill-current" viewBox="0 0 24 24">

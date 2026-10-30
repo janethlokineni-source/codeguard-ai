@@ -428,3 +428,4 @@ export const LighthouseScene: React.FC<LighthouseSceneProps> = ({
     </div>
   );
 };
+
