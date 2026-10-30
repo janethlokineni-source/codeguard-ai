@@ -23,3 +23,4 @@ export const Divider: React.FC<DividerProps> = ({ label, className = '' }) => {
     </div>
   );
 };
+

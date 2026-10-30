@@ -29,3 +29,4 @@ export const PageBackground: React.FC<PageBackgroundProps> = ({ children, classN
     </div>
   );
 };
+

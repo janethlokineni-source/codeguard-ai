@@ -163,8 +163,9 @@ export default function Home() {
 
   // 1. DYNAMIC CATEGORY COUNTS (Always computed from scanResult.issues, never 0 when issues exist)
   const categoryCounts = useMemo(() => {
+    const unappliedIssues = (scanResult?.issues || []).filter((i) => !i.isApplied);
     const counts = {
-      all: (scanResult?.issues || []).length,
+      all: unappliedIssues.length,
       error: 0,
       bug: 0,
       security: 0,
@@ -172,7 +173,7 @@ export default function Home() {
       dependency: (scanResult?.dependencies || []).length,
       quality: 0,
     };
-    for (const issue of scanResult?.issues || []) {
+    for (const issue of unappliedIssues) {
       const cat = issue.category?.toLowerCase();
       if (cat === 'error' || cat === 'errors') counts.error++;
       else if (cat === 'bug' || cat === 'bugs') counts.bug++;
@@ -186,7 +187,7 @@ export default function Home() {
   // Filtered issues to show in the right panel (across all files or for active file)
   const displayedIssues = useMemo(() => {
     if (!scanResult) return [];
-    let list = scanResult.issues;
+    let list = scanResult.issues.filter((i) => !i.isApplied);
     if (categoryFilter !== 'all') {
       list = list.filter((i) => {
         const c = i.category.toLowerCase();
@@ -195,11 +196,13 @@ export default function Home() {
         if (categoryFilter === 'performance') return c === 'performance' || c === 'perf';
         return c === categoryFilter;
       });
-    } else {
-      // If 'all', show issues for current active file
-      list = list.filter((i) => i.filePath === activeFilePath);
     }
-    return [...list].sort((a, b) => a.lineNumber - b.lineNumber);
+    // Sort: issues for active file first, then other files
+    return [...list].sort((a, b) => {
+      if (a.filePath === activeFilePath && b.filePath !== activeFilePath) return -1;
+      if (b.filePath === activeFilePath && a.filePath !== activeFilePath) return 1;
+      return a.lineNumber - b.lineNumber;
+    });
   }, [scanResult, categoryFilter, activeFilePath]);
 
   // 2. FOLDER SELECTION WITH NATIVE API OR INPUT
@@ -1074,7 +1077,7 @@ export default function Home() {
                     const first = scanResult.issues.find((i) => i.filePath === path);
                     if (first) setSelectedIssueId(first.id);
                   }}
-                  issues={scanResult.issues}
+                  issues={scanResult.issues.filter((i) => !i.isApplied)}
                 />
               </div>
 
@@ -1085,7 +1088,7 @@ export default function Home() {
                     filePath={activeFilePath}
                     code={activeFile.content}
                     onChangeCode={handleCodeChange}
-                    issues={scanResult.issues.filter((i) => i.filePath === activeFilePath)}
+                    issues={scanResult.issues.filter((i) => i.filePath === activeFilePath && !i.isApplied)}
                     selectedIssueId={selectedIssueId}
                     onSelectIssueId={(id) => setSelectedIssueId(id)}
                     onSaveToDisk={() => saveFileToDisk()}

@@ -60,7 +60,7 @@ class CompiledRule:
 COMPILED_RULES: List[CompiledRule] = [
     # 1. Hardcoded Secrets & Credentials
     CompiledRule(
-        r"""(?i)(api[_-]?key|secret[_-]?key|auth[_-]?token|access[_-]?token|client[_-]?secret|private[_-]?key|password|db_pass)\s*[:=]\s*['"][A-Za-z0-9_\-\.@!#%^&*]{8,}['"]""",
+        r"""(?i)(?:api[_-]?key|secret[_-]?key|jwt[_-]?secret|auth[_-]?token|access[_-]?token|client[_-]?secret|private[_-]?key|password|db_pass)\s*(?:[:=]|\|\|)\s*['"][A-Za-z0-9_\-\.@!#%^&*]{8,}['"]""",
         "security", "Critical",
         "Hardcoded Secret / API Key",
         "Embedding plain-text credentials or API tokens directly in source code risks immediate exposure and unauthorized API abuse if committed.",
@@ -70,6 +70,18 @@ COMPILED_RULES: List[CompiledRule] = [
             line
         ),
         ["javascript", "typescript", "python", "java", "sql"]
+    ),
+    CompiledRule(
+        r"""['"]postgres(?:ql)?:\/\/[^:]+:[^@]+@[^'"]+['"]|['"]mongodb(?:\+srv)?:\/\/[^:]+:[^@]+@[^'"]+['"]|['"]mysql:\/\/[^:]+:[^@]+@[^'"]+['"]""",
+        "security", "Critical",
+        "Hardcoded Database Connection String with Credentials",
+        "Exposing database passwords and connection URIs inside source code allows direct database compromise.",
+        lambda line, l: re.sub(
+            r"""['"](postgres(?:ql)?|mongodb(?:\+srv)?|mysql):\/\/[^'"]+['"]""",
+            "process.env.DATABASE_URL || ''" if l != "python" else "os.getenv('DATABASE_URL', '')",
+            line
+        ),
+        ["javascript", "typescript", "python", "json", "env"]
     ),
     CompiledRule(
         r"""-----BEGIN (?:RSA |EC )?PRIVATE KEY-----""",

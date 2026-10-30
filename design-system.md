@@ -46,3 +46,4 @@
 - **Timing Function**: `cubic-bezier(0.22, 1, 0.36, 1)`
 - **Duration**: `300ms` for micro-interactions, `150ms` for hovers
 - **Properties Animated**: Only `transform` and `opacity`
+

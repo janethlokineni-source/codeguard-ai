@@ -113,8 +113,9 @@ export const IssuesPanel: React.FC<IssuesPanelProps> = React.memo(({
             </p>
           </div>
         ) : (
-          issues.map((issue) => {
+          issues.map((issue, index) => {
             const isSelected = issue.id === selectedIssueId;
+            const issueNum = index + 1;
 
             return (
               <div
@@ -128,11 +129,16 @@ export const IssuesPanel: React.FC<IssuesPanelProps> = React.memo(({
               >
                 {/* File Path & Line Navigation Bar */}
                 <div className="flex items-center justify-between gap-2 mb-2 pb-1.5 border-b border-[rgba(201,119,127,0.12)]">
-                  <span className="inline-flex items-center gap-1.5 text-[11px] font-mono text-[#f6e7dc] truncate max-w-[210px]">
-                    <FileCode className="w-3 h-3 text-[#c9777f] shrink-0" />
-                    <span className="truncate">{issue.filePath}</span>
-                    <span className="text-[#f0c98a] font-bold">:{issue.lineNumber}</span>
-                  </span>
+                  <div className="flex items-center gap-2 truncate max-w-[240px]">
+                    <span className="w-5 h-5 rounded-md bg-[#c9777f]/20 border border-[#c9777f]/40 text-[#f0c98a] font-mono text-[10px] font-bold flex items-center justify-center shrink-0">
+                      {issueNum}
+                    </span>
+                    <span className="inline-flex items-center gap-1 text-[11px] font-mono text-[#f6e7dc] truncate">
+                      <FileCode className="w-3 h-3 text-[#c9777f] shrink-0" />
+                      <span className="truncate">{issue.filePath}</span>
+                      <span className="text-[#f0c98a] font-bold">:{issue.lineNumber}</span>
+                    </span>
+                  </div>
 
                   <div className="flex items-center gap-1.5 shrink-0">
                     <Badge severity={issue.severity}>{issue.severity}</Badge>
@@ -145,6 +151,7 @@ export const IssuesPanel: React.FC<IssuesPanelProps> = React.memo(({
                 {/* Issue Title & AI tag */}
                 <div className="flex items-start justify-between gap-1.5">
                   <h4 className="text-xs font-semibold text-[#f6e7dc] leading-snug">
+                    <span className="text-[#f0c98a] font-bold mr-1.5">{issueNum}.</span>
                     {issue.title}
                   </h4>
                   {issue.aiEnhanced && (
