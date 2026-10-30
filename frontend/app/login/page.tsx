@@ -3,27 +3,40 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import {
   ArrowRight,
   Lock,
-  Mail,
+  Eye,
+  EyeOff,
   Check,
   Shield,
   Sparkles,
 } from 'lucide-react';
-import { Logo } from '@/components/ui/Logo';
-import { PageBackground } from '@/components/ui/PageBackground';
 import { StatusChip } from '@/components/ui/StatusChip';
-import { Card } from '@/components/ui/Card';
-import { Input } from '@/components/ui/Input';
-import { Button } from '@/components/ui/Button';
-import { Divider } from '@/components/ui/Divider';
+
+// Dynamic import of the Three.js 3D Lighthouse Scene (client-side only)
+const LighthouseScene = dynamic(
+  () => import('@/components/LighthouseScene').then((mod) => mod.LighthouseScene),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-full flex flex-col items-center justify-center bg-[#120b1a] text-[#b8a5b8] gap-3">
+        <div className="w-8 h-8 rounded-full border-2 border-[#c9777f] border-t-transparent animate-spin" />
+        <span className="text-xs font-mono tracking-widest uppercase text-[#f0c98a]">
+          Igniting Beacon...
+        </span>
+      </div>
+    ),
+  }
+);
 
 export default function LoginPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'signin' | 'signup'>('signin');
+  const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -31,153 +44,274 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
     setTimeout(() => {
-      setIsLoading(false);
       router.push('/');
-    }, 700);
+    }, 600);
   };
 
   return (
-    <PageBackground className="justify-between px-6 py-8">
-      {/* Top Bar */}
-      <header className="max-w-6xl w-full mx-auto flex items-center justify-between">
-        <Logo size="md" />
-        <StatusChip label="PRIVATE SESSION" />
-      </header>
+    <div className="h-screen w-full overflow-hidden bg-[#120b1a] text-[#f6e7dc] flex flex-col select-none relative">
+      {/* Upper Subtle Horizon Glow */}
+      <div
+        className="absolute top-0 right-0 w-96 h-96 pointer-events-none opacity-40"
+        style={{
+          background: 'radial-gradient(circle at 100% 0%, rgba(201, 119, 127, 0.15) 0%, transparent 70%)',
+          zIndex: 1,
+        }}
+        aria-hidden="true"
+      />
 
-      {/* Center Auth Experience */}
-      <main className="max-w-md w-full mx-auto my-auto py-10 flex flex-col items-center">
-        {/* Cinematic Serif Heading */}
-        <div className="text-center mb-8">
-          <span className="text-[10px] font-semibold tracking-[0.25em] uppercase text-[#f0c98a] block mb-2">
-            A CLEARER VIEW BEFORE THE MERGE
-          </span>
-          <h1 className="font-serif-heading text-3xl sm:text-4xl font-bold text-[#f6e7dc] leading-tight tracking-tight">
-            See what&apos;s hiding in the dark.
-          </h1>
-          <p className="text-xs text-[#b8a5b8] mt-2 max-w-xs mx-auto">
-            Offline, privacy-first automated code security inspection and bug remediation.
-          </p>
+      {/* Main Two-Column Laptop Layout (Designed for 1440x900 and 1280x720) */}
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 h-full overflow-hidden">
+        {/* ========================================================= */}
+        {/* LEFT COLUMN: Spacious 3D Sunset Lighthouse Scene (Cols 7) */}
+        {/* ========================================================= */}
+        <div className="hidden lg:block lg:col-span-7 h-full relative border-r border-[rgba(201,119,127,0.18)] bg-[#120b1a] overflow-hidden">
+          <LighthouseScene />
         </div>
 
-        {/* Translucent Dusk Glass Card */}
-        <Card className="w-full p-7 sm:p-8 shadow-2xl">
-          {/* Segmented Tab Control */}
-          <div className="bg-[#0f0816] p-1 rounded-2xl border border-[rgba(201,119,127,0.18)] flex items-center mb-6">
-            <button
-              type="button"
-              onClick={() => setActiveTab('signin')}
-              className={`flex-1 py-2 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
-                activeTab === 'signin'
-                  ? 'bg-[rgba(54,33,72,0.95)] text-[#f6e7dc] border border-[rgba(201,119,127,0.35)] shadow-sm'
-                  : 'text-[#b8a5b8] hover:text-[#f6e7dc]'
-              }`}
+        {/* ========================================================= */}
+        {/* RIGHT COLUMN: Sign-in Panel (Cols 5)                      */}
+        {/* ========================================================= */}
+        <div className="col-span-1 lg:col-span-5 h-full flex flex-col justify-between p-6 sm:p-8 xl:p-12 overflow-y-auto lg:overflow-hidden bg-[#160d20]/95 backdrop-blur-xl relative z-10">
+          {/* Top Panel Bar */}
+          <div className="flex items-center justify-between w-full">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2.5 group cursor-pointer"
+              title="Return to Home"
             >
-              Sign in
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('signup')}
-              className={`flex-1 py-2 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
-                activeTab === 'signup'
-                  ? 'bg-[rgba(54,33,72,0.95)] text-[#f6e7dc] border border-[rgba(201,119,127,0.35)] shadow-sm'
-                  : 'text-[#b8a5b8] hover:text-[#f6e7dc]'
-              }`}
-            >
-              Create account
-            </button>
+              {/* Clean Vector CLYRO Crescent & Star Emblem */}
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center relative overflow-hidden transition-transform duration-300 group-hover:scale-105 border border-[rgba(201,119,127,0.35)] shadow-[0_0_15px_rgba(201,119,127,0.3)] bg-[#0f0816]">
+                <svg
+                  className="w-4 h-4 text-[#f6e7dc]"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <defs>
+                    <linearGradient id="clyroGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#c9777f" />
+                      <stop offset="50%" stopColor="#a26db0" />
+                      <stop offset="100%" stopColor="#8a63b5" />
+                    </linearGradient>
+                  </defs>
+                  {/* Outer Crescent */}
+                  <path
+                    d="M19 12C19 15.866 15.866 19 12 19C8.134 19 5 15.866 5 12C5 8.134 8.134 5 12 5C13.2 5 14.32 5.3 15.3 5.84C13.28 6.94 11.9 9.12 11.9 11.62C11.9 14.65 14.35 17.1 17.38 17.1C18.15 17.1 18.88 16.94 19.55 16.66C19.2 13.9 19 12 19 12Z"
+                    fill="url(#clyroGradient)"
+                  />
+                  {/* 4-Pointed Star in Crescent */}
+                  <polygon
+                    points="14.5,8 15.2,10.2 17.4,10.9 15.2,11.6 14.5,13.8 13.8,11.6 11.6,10.9 13.8,10.2"
+                    fill="#f0c98a"
+                  />
+                </svg>
+              </div>
+
+              <div className="flex flex-col">
+                <span className="font-sans font-extrabold tracking-[0.2em] text-[#f6e7dc] text-base leading-none">
+                  CLYRO
+                </span>
+                <span className="text-[8px] tracking-[0.25em] uppercase font-semibold text-[#b8a5b8] mt-0.5">
+                  PRIVATE CODE REVIEW
+                </span>
+              </div>
+            </Link>
+
+            <StatusChip label="PRIVATE SESSION" />
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <Input
-              label="Work or Personal Email"
-              type="email"
-              placeholder="engineer@team.internal"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
+          {/* Center Card Content */}
+          <div className="w-full max-w-sm mx-auto my-auto py-2">
+            {/* Header Text */}
+            <div className="mb-6">
+              <span className="text-[10px] font-mono uppercase tracking-[0.22em] text-[#f0c98a] block mb-1.5 font-semibold">
+                {isSignUp ? 'NEW AUDIT ACCOUNT' : 'SECURE WORKSPACE'}
+              </span>
+              <h1 className="font-serif-heading text-2xl sm:text-3xl font-bold text-[#f6e7dc] tracking-tight leading-snug">
+                {isSignUp ? 'Create your account' : 'Welcome back'}
+              </h1>
+              <p className="text-xs text-[#b8a5b8] mt-1 leading-relaxed">
+                {isSignUp
+                  ? 'Start reviewing code privately with local automated fixes.'
+                  : 'Enter your credentials to access your local code analysis workspace.'}
+              </p>
+            </div>
 
-            <Input
-              label="Password"
-              type="password"
-              placeholder="••••••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              showPasswordToggle
-              required
-            />
-
-            <div className="flex items-center justify-between text-xs pt-1">
-              <label className="flex items-center gap-2 text-[#b8a5b8] cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="rounded border-[rgba(201,119,127,0.3)] bg-[#0f0816] text-[#c9777f] focus:ring-0 focus:ring-offset-0 cursor-pointer"
-                />
-                <span>Remember me</span>
-              </label>
-
+            {/* Segmented Mode Switcher */}
+            <div className="bg-[#0f0816] p-1 rounded-2xl border border-[rgba(201,119,127,0.2)] flex items-center mb-5">
               <button
                 type="button"
-                className="text-[#f0c98a] hover:underline cursor-pointer font-medium"
+                onClick={() => setIsSignUp(false)}
+                className={`flex-1 py-1.5 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
+                  !isSignUp
+                    ? 'bg-[rgba(54,33,72,0.95)] text-[#f6e7dc] border border-[rgba(201,119,127,0.35)] shadow-sm'
+                    : 'text-[#b8a5b8] hover:text-[#f6e7dc]'
+                }`}
               >
-                Forgot password?
+                Sign in
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsSignUp(true)}
+                className={`flex-1 py-1.5 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
+                  isSignUp
+                    ? 'bg-[rgba(54,33,72,0.95)] text-[#f6e7dc] border border-[rgba(201,119,127,0.35)] shadow-sm'
+                    : 'text-[#b8a5b8] hover:text-[#f6e7dc]'
+                }`}
+              >
+                Create account
               </button>
             </div>
 
-            {/* Primary Gradient Action Button */}
-            <Button
-              type="submit"
-              variant="primary"
-              size="lg"
-              className="w-full mt-2"
-              icon={<ArrowRight className="w-4 h-4" />}
-              iconPosition="right"
-              disabled={isLoading}
-            >
-              {isLoading
-                ? 'Opening workspace...'
-                : activeTab === 'signin'
-                ? 'Enter Workspace'
-                : 'Create Account'}
-            </Button>
-          </form>
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="space-y-3.5">
+              {/* Email Field */}
+              <div>
+                <label className="block text-[11px] uppercase tracking-wider font-semibold text-[#b8a5b8] mb-1.5 font-mono">
+                  Email Address
+                </label>
+                <div className="relative">
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="name@team.domain"
+                    required
+                    className="w-full h-11 px-3.5 rounded-xl bg-[#0f0816] border border-[rgba(201,119,127,0.22)] focus:border-[#c9777f] focus:ring-1 focus:ring-[#c9777f]/40 text-[#f6e7dc] placeholder:text-[#6a546d] text-xs transition-all outline-none"
+                  />
+                </div>
+              </div>
 
-          <Divider label="OR CONTINUE WITH" />
+              {/* Password Field */}
+              <div>
+                <label className="block text-[11px] uppercase tracking-wider font-semibold text-[#b8a5b8] mb-1.5 font-mono">
+                  Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••••••"
+                    required
+                    className="w-full h-11 px-3.5 pr-10 rounded-xl bg-[#0f0816] border border-[rgba(201,119,127,0.22)] focus:border-[#c9777f] focus:ring-1 focus:ring-[#c9777f]/40 text-[#f6e7dc] placeholder:text-[#6a546d] text-xs transition-all outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#b8a5b8] hover:text-[#f6e7dc] p-1 transition-colors cursor-pointer"
+                    title={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
 
-          {/* Social Auth Outlined Buttons */}
-          <div className="grid grid-cols-2 gap-3">
+              {/* Remember Me & Forgot Password */}
+              <div className="flex items-center justify-between pt-0.5">
+                <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="sr-only"
+                  />
+                  <div
+                    className={`w-4 h-4 rounded-md border flex items-center justify-center transition-all ${
+                      rememberMe
+                        ? 'bg-[#c9777f] border-[#c9777f] text-white shadow-[0_0_8px_rgba(201,119,127,0.4)]'
+                        : 'border-[rgba(201,119,127,0.3)] bg-[#0f0816]'
+                    }`}
+                  >
+                    {rememberMe && <Check className="w-3 h-3 stroke-[3]" />}
+                  </div>
+                  <span className="text-[11px] text-[#b8a5b8] font-medium">Remember me</span>
+                </label>
+
+                {!isSignUp && (
+                  <button
+                    type="button"
+                    onClick={() => router.push('/')}
+                    className="text-[11px] text-[#f0c98a] hover:text-[#f6e7dc] transition-colors cursor-pointer"
+                  >
+                    Forgot password?
+                  </button>
+                )}
+              </div>
+
+              {/* Primary Submit Button */}
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="clyro-btn-primary w-full h-11 rounded-xl text-white font-semibold text-xs tracking-wider uppercase flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg hover:shadow-[0_0_25px_rgba(201,119,127,0.4)] disabled:opacity-60"
+              >
+                <span>{isLoading ? 'Authenticating...' : isSignUp ? 'Create Workspace' : 'Sign In'}</span>
+                {!isLoading && <ArrowRight className="w-4 h-4" />}
+              </button>
+            </form>
+
+            {/* Divider */}
+            <div className="relative my-4 flex items-center justify-center">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-[rgba(201,119,127,0.18)]" />
+              </div>
+              <span className="relative px-3 bg-[#160d20] text-[9px] font-mono tracking-[0.2em] uppercase font-bold text-[#7e6980]">
+                OR CONTINUE WITH
+              </span>
+            </div>
+
+            {/* GitHub Sign-In Button */}
             <button
               type="button"
               onClick={() => router.push('/')}
-              className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-[rgba(35,23,48,0.65)] hover:bg-[rgba(50,32,68,0.85)] border border-[rgba(201,119,127,0.22)] text-xs font-medium text-[#f6e7dc] transition-all cursor-pointer"
+              className="w-full h-10 rounded-xl bg-[#0f0816] hover:bg-[#1d1326] border border-[rgba(201,119,127,0.22)] hover:border-[#c9777f]/50 text-xs font-medium text-[#f6e7dc] flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm"
             >
               <svg className="w-4 h-4 text-[#f0c98a] fill-current" viewBox="0 0 24 24">
-                <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
+                <path
+                  fillRule="evenodd"
+                  clipRule="evenodd"
+                  d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
+                />
               </svg>
-              <span>GitHub</span>
+              <span>Continue with GitHub</span>
             </button>
 
-            <button
-              type="button"
-              onClick={() => router.push('/')}
-              className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-[rgba(35,23,48,0.65)] hover:bg-[rgba(50,32,68,0.85)] border border-[rgba(201,119,127,0.22)] text-xs font-medium text-[#f6e7dc] transition-all cursor-pointer"
-            >
-              <Mail className="w-4 h-4 text-[#c9777f]" />
-              <span>Magic Link</span>
-            </button>
+            {/* Account Switch Text */}
+            <div className="mt-4 text-center">
+              <button
+                type="button"
+                onClick={() => setIsSignUp(!isSignUp)}
+                className="text-[11px] text-[#b8a5b8] hover:text-[#f6e7dc] transition-colors cursor-pointer"
+              >
+                {isSignUp ? (
+                  <>
+                    Already have an account?{' '}
+                    <span className="text-[#f0c98a] font-semibold underline underline-offset-4">
+                      Sign in
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    Don&apos;t have an account?{' '}
+                    <span className="text-[#f0c98a] font-semibold underline underline-offset-4">
+                      Create one
+                    </span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
-        </Card>
-      </main>
 
-      {/* Footer Lock Note */}
-      <footer className="max-w-6xl w-full mx-auto text-center pt-6 pb-2">
-        <div className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.2em] font-semibold text-[#7e6980]">
-          <Lock className="w-3 h-3 text-[#f0c98a]" />
-          <span>CLYRO · PRIVATE CODE REVIEW · RUNS 100% LOCALLY</span>
+          {/* Footer Lock Note */}
+          <div className="w-full text-center pt-2">
+            <div className="inline-flex items-center gap-1.5 text-[9px] uppercase tracking-[0.2em] font-mono font-medium text-[#7e6980]">
+              <Lock className="w-3 h-3 text-[#f0c98a]" />
+              <span>CLYRO · PRIVATE CODE REVIEW · RUNS 100% LOCALLY</span>
+            </div>
+          </div>
         </div>
-      </footer>
-    </PageBackground>
+      </div>
+    </div>
   );
 }
