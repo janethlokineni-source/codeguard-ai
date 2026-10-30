@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { FileCode, Folder, FolderOpen, CheckCircle, ShieldAlert } from 'lucide-react';
+import { FileCode, CheckCircle2 } from 'lucide-react';
 import { Issue } from '@/types/scanner';
 
 interface FileExplorerProps {
@@ -17,15 +17,14 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
   onSelectFile,
   issues,
 }) => {
-  // Compute badge color & issue count per file
   const getFileBadge = (filePath: string) => {
     const fileIssues = issues.filter((i) => i.filePath === filePath);
     if (fileIssues.length === 0) {
       return {
         count: 0,
         label: 'Clean',
-        color: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
-        dot: 'bg-emerald-400',
+        color: 'bg-emerald-500/15 text-[#86efac] border-emerald-500/30',
+        dot: 'bg-[#86efac]',
       };
     }
     const hasCritOrHigh = fileIssues.some((i) => i.severity === 'Critical' || i.severity === 'High');
@@ -33,8 +32,8 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
       return {
         count: fileIssues.length,
         label: `${fileIssues.length}`,
-        color: 'bg-rose-500/20 text-rose-400 border-rose-500/40',
-        dot: 'bg-rose-500',
+        color: 'bg-rose-500/20 text-rose-300 border-rose-500/35',
+        dot: 'bg-rose-400',
       };
     }
     const hasMed = fileIssues.some((i) => i.severity === 'Medium');
@@ -42,27 +41,27 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
       return {
         count: fileIssues.length,
         label: `${fileIssues.length}`,
-        color: 'bg-amber-500/20 text-amber-400 border-amber-500/40',
-        dot: 'bg-amber-500',
+        color: 'bg-amber-500/20 text-[#f0c98a] border-amber-500/35',
+        dot: 'bg-[#f0c98a]',
       };
     }
     return {
       count: fileIssues.length,
       label: `${fileIssues.length}`,
-      color: 'bg-blue-500/20 text-blue-400 border-blue-500/40',
-      dot: 'bg-blue-400',
+      color: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/35',
+      dot: 'bg-indigo-400',
     };
   };
 
   return (
-    <div className="h-full flex flex-col bg-slate-950/80 border-r border-slate-800/80 select-none">
-      <div className="p-3 border-b border-slate-800/80 flex items-center justify-between">
-        <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+    <div className="h-full flex flex-col bg-[#190f24] border-r border-[rgba(201,119,127,0.18)] select-none">
+      <div className="p-3.5 border-b border-[rgba(201,119,127,0.18)] bg-[#1d132b]/80 backdrop-blur-md flex items-center justify-between">
+        <span className="text-xs font-semibold uppercase tracking-wider text-[#b8a5b8]">
           Project Files ({files.length})
         </span>
       </div>
 
-      <div className="flex-1 overflow-y-auto py-2 px-1.5 space-y-0.5 font-mono text-xs">
+      <div className="flex-1 overflow-y-auto py-2 px-2 space-y-1 font-mono text-xs">
         {files.map((f) => {
           const isSelected = f.path === selectedPath;
           const badge = getFileBadge(f.path);
@@ -73,22 +72,22 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
             <button
               key={f.path}
               onClick={() => onSelectFile(f.path)}
-              className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-left transition-colors cursor-pointer group ${
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left transition-all duration-200 cursor-pointer group ${
                 isSelected
-                  ? 'bg-blue-600/20 text-white font-medium border border-blue-500/40'
-                  : 'text-slate-300 hover:bg-slate-900 hover:text-white'
+                  ? 'bg-[#28173a] text-[#f6e7dc] font-medium border border-[#c9777f]/45 shadow-sm'
+                  : 'text-[#b8a5b8] hover:bg-[#20132e] hover:text-[#f6e7dc] border border-transparent'
               }`}
             >
-              <div className="flex items-center gap-2 truncate min-w-0 mr-2">
+              <div className="flex items-center gap-2.5 truncate min-w-0 mr-2">
                 <FileCode
-                  className={`w-4 h-4 shrink-0 ${
-                    isSelected ? 'text-blue-400' : 'text-slate-500 group-hover:text-slate-300'
+                  className={`w-4 h-4 shrink-0 transition-colors ${
+                    isSelected ? 'text-[#c9777f]' : 'text-[#7e6980] group-hover:text-[#b8a5b8]'
                   }`}
                 />
                 <div className="flex flex-col truncate">
-                  <span className="truncate text-xs">{fileName}</span>
+                  <span className="truncate text-xs font-sans font-medium">{fileName}</span>
                   {dirPath && (
-                    <span className="text-[10px] text-slate-500 truncate -mt-0.5">
+                    <span className="text-[10px] text-[#7e6980] truncate -mt-0.5 font-mono">
                       {dirPath}
                     </span>
                   )}
@@ -97,10 +96,13 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 
               {/* Status Badge */}
               <span
-                className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold border ${badge.color}`}
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border shrink-0 ${badge.color}`}
               >
-                <span className={`w-1.5 h-1.5 rounded-full ${badge.dot}`} />
-                {badge.count === 0 ? '✓' : badge.count}
+                {badge.count === 0 ? (
+                  <CheckCircle2 className="w-3 h-3 text-[#86efac]" />
+                ) : (
+                  <span>{badge.label}</span>
+                )}
               </span>
             </button>
           );
@@ -109,4 +111,3 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
     </div>
   );
 };
-

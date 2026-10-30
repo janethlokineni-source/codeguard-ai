@@ -21,6 +21,7 @@ import {
   FileCode,
   Layers,
   Sparkles,
+  Lock,
 } from 'lucide-react';
 import JSZip from 'jszip';
 import { Issue, DependencyItem, ScanResult, CategoryType, SeverityLevel } from '@/types/scanner';
@@ -31,6 +32,9 @@ import { DependenciesTab } from '@/components/DependenciesTab';
 import { BestPracticesPanel } from '@/components/BestPracticesPanel';
 import { ToastContainer, ToastMessage } from '@/components/Toast';
 import { ConfirmModal } from '@/components/ConfirmModal';
+import { Logo } from '@/components/ui/Logo';
+import { StatusChip } from '@/components/ui/StatusChip';
+import { PageBackground } from '@/components/ui/PageBackground';
 
 // Lazy-load Monaco Editor for ultra-fast initial page load
 const MonacoCodeWorkspace = dynamic(
@@ -728,7 +732,7 @@ export default function Home() {
   const activeFile = files.find((f) => f.path === activeFilePath);
 
   return (
-    <div className="min-h-screen flex flex-col bg-[var(--bg-primary)] text-[var(--text-primary)]">
+    <PageBackground className="min-h-screen flex flex-col text-[var(--text-primary)]">
       <ToastContainer toasts={toasts} onDismiss={removeToast} />
 
       <ConfirmModal
@@ -742,49 +746,55 @@ export default function Home() {
       />
 
       {/* TOP NAVIGATION */}
-      <header className="h-14 border-b border-[var(--border-color)] bg-[var(--bg-card)]/90 backdrop-blur-md sticky top-0 z-40 px-6 flex items-center justify-between">
+      <header className="h-16 border-b border-[rgba(201,119,127,0.18)] bg-[#120b1a]/80 backdrop-blur-xl sticky top-0 z-40 px-6 flex items-center justify-between relative">
         <button
           onClick={handleLogoClick}
-          className="flex items-center gap-2.5 hover:opacity-85 transition-opacity cursor-pointer group"
+          className="flex items-center gap-2.5 hover:opacity-90 transition-opacity cursor-pointer group text-left"
           title="Return to Home"
         >
-          <div className="w-8 h-8 rounded-md bg-blue-600 flex items-center justify-center text-white shadow-sm">
-            <Shield className="w-4 h-4" />
-          </div>
-          <span className="font-serif-heading font-bold text-base tracking-tight text-[var(--text-primary)]">
-            CODEGUARD AI
-          </span>
+          <Logo size="md" />
         </button>
 
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="p-1.5 rounded-md border border-[var(--border-color)] hover:bg-[var(--bg-secondary)] text-[var(--text-secondary)] transition-colors cursor-pointer"
-            title="Toggle light/dark theme"
-          >
-            {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          </button>
+          <StatusChip variant="ai" label="OLLAMA READY" />
+          <StatusChip label="PRIVATE SESSION" />
 
           {phase === 'workspace' && (
             <>
               <button
                 onClick={downloadFixedZip}
-                className="flex items-center gap-1.5 px-3 py-1 rounded-md bg-[var(--bg-secondary)] hover:bg-slate-800 text-[var(--text-primary)] text-xs font-medium border border-[var(--border-color)] transition-colors cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#190f24] hover:bg-[#231533] text-[#f6e7dc] text-xs font-medium border border-[rgba(201,119,127,0.25)] transition-all cursor-pointer shadow-sm"
               >
-                <Download className="w-3.5 h-3.5 text-blue-400" />
+                <Download className="w-3.5 h-3.5 text-[#f0c98a]" />
                 <span>Export (.zip)</span>
               </button>
 
               <button
                 onClick={handleLogoClick}
-                className="flex items-center gap-1.5 px-3 py-1 rounded-md bg-[var(--bg-secondary)] hover:bg-slate-800 text-[var(--text-secondary)] hover:text-white text-xs font-medium border border-[var(--border-color)] transition-colors cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#190f24] hover:bg-[#231533] text-[#b8a5b8] hover:text-[#f6e7dc] text-xs font-medium border border-[rgba(201,119,127,0.25)] transition-all cursor-pointer shadow-sm"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>New Scan</span>
               </button>
             </>
           )}
+
+          <a
+            href="/login"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#190f24] hover:bg-[#231533] text-[#f6e7dc] text-xs font-medium border border-[rgba(201,119,127,0.25)] transition-all cursor-pointer shadow-sm"
+            title="Account / Session"
+          >
+            <span className="w-2 h-2 rounded-full bg-[#f0c98a]"></span>
+            <span>Sign in</span>
+          </a>
         </div>
+
+        {/* Dynamic Scanning Line */}
+        {isScanning && (
+          <div className="absolute bottom-0 left-0 right-0 h-[2px] overflow-hidden">
+            <div className="h-full w-full clyro-scan-beam" />
+          </div>
+        )}
       </header>
 
       {/* Hidden File Inputs */}
@@ -805,74 +815,79 @@ export default function Home() {
 
       {/* 1. MINIMAL CLASSIC HOME SCREEN */}
       {phase === 'upload' && (
-        <main className="flex-1 flex flex-col items-center justify-center p-6 text-center max-w-3xl mx-auto my-auto">
-          <div className="w-12 h-12 rounded-lg bg-blue-600/10 border border-blue-600/20 text-blue-500 flex items-center justify-center mb-6 shadow-sm">
-            <Shield className="w-6 h-6" />
+        <main className="flex-1 flex flex-col items-center justify-center p-6 text-center max-w-3xl mx-auto my-auto relative z-10">
+          <div className="w-14 h-14 rounded-2xl bg-[rgba(201,119,127,0.12)] border border-[rgba(201,119,127,0.28)] text-[#c9777f] flex items-center justify-center mb-6 shadow-[0_0_25px_rgba(201,119,127,0.15)]">
+            <Shield className="w-7 h-7" />
           </div>
 
-          <h1 className="font-serif-heading text-4xl sm:text-5xl font-bold tracking-tight text-[var(--text-primary)] leading-tight">
-            Scan Before You Merge
+          <h1 className="font-serif-heading text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-[#f6e7dc] leading-tight">
+            Scan before you merge.
           </h1>
-          <p className="mt-3 text-base text-[var(--text-secondary)] font-normal max-w-lg leading-relaxed">
-            Local, in-editor code inspection, vulnerability detection, and automated line fixes for hackathon teams.
+          <p className="mt-4 text-base sm:text-lg text-[#b8a5b8] font-light max-w-xl leading-relaxed">
+            A clearer view before the merge. Local-first automated code inspection, vulnerability detection, and instant line fixes.
           </p>
 
           <div
             onClick={handlePickFolder}
-            className="mt-10 w-full max-w-md p-10 rounded-lg border border-dashed border-[var(--border-color)] bg-[var(--bg-card)] hover:border-blue-500/80 hover:bg-[var(--bg-secondary)] transition-all duration-200 flex flex-col items-center justify-center cursor-pointer group shadow-sm"
+            className="mt-10 w-full max-w-lg p-10 rounded-3xl border-2 border-dashed border-[rgba(201,119,127,0.3)] bg-[#190f24]/70 hover:border-[#c9777f] hover:bg-[#190f24]/90 hover:shadow-[0_0_35px_rgba(201,119,127,0.2)] transition-all duration-300 flex flex-col items-center justify-center cursor-pointer group backdrop-blur-md"
           >
-            <div className="w-12 h-12 rounded-md bg-blue-600/10 text-blue-500 flex items-center justify-center group-hover:scale-105 transition-transform">
-              <FolderPlus className="w-6 h-6" />
+            <div className="w-14 h-14 rounded-2xl bg-[rgba(201,119,127,0.15)] border border-[rgba(201,119,127,0.25)] text-[#f0c98a] flex items-center justify-center group-hover:scale-105 group-hover:text-[#c9777f] transition-all">
+              <FolderPlus className="w-7 h-7" />
             </div>
 
-            <span className="mt-4 text-base font-semibold text-[var(--text-primary)]">
+            <span className="mt-5 text-lg font-semibold text-[#f6e7dc] group-hover:text-white transition-colors">
               + Add Folder
             </span>
-            <p className="text-xs text-[var(--text-secondary)] mt-1">
-              Select project folder or drag & drop here
+            <p className="text-xs text-[#b8a5b8] mt-1.5 font-sans">
+              Select project directory or drag and drop files here
             </p>
 
-            <div className="mt-5 flex items-center gap-2">
-              <span className="text-xs text-[var(--text-secondary)]">or</span>
+            <div className="mt-6 flex items-center gap-3">
+              <span className="text-xs uppercase tracking-wider text-[var(--text-muted)] font-mono">or</span>
               <button
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   filesInputRef.current?.click();
                 }}
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-[var(--bg-secondary)] hover:bg-slate-800 text-xs font-medium text-[var(--text-primary)] border border-[var(--border-color)] transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#0f0816] hover:bg-[#231533] text-xs font-medium text-[#f6e7dc] border border-[rgba(201,119,127,0.3)] transition-all cursor-pointer shadow-sm hover:border-[#c9777f]"
               >
-                <FilePlus className="w-3 h-3 text-blue-400" />
+                <FilePlus className="w-3.5 h-3.5 text-[#f0c98a]" />
                 Add Files
               </button>
             </div>
           </div>
 
           {errorMsg && (
-            <p className="mt-4 text-xs font-medium text-rose-500 bg-rose-500/10 border border-rose-500/20 px-3 py-1.5 rounded">
+            <p className="mt-4 text-xs font-medium text-[#f43f5e] bg-[rgba(244,63,94,0.1)] border border-[rgba(244,63,94,0.3)] px-4 py-2 rounded-xl">
               {errorMsg}
             </p>
           )}
+
+          <div className="mt-14 flex items-center justify-center gap-2 text-xs uppercase tracking-widest text-[#8e7a8e] font-mono">
+            <Lock className="w-3.5 h-3.5 text-[#f0c98a]" />
+            <span>CLYRO · PRIVATE CODE REVIEW · RUNS 100% LOCALLY</span>
+          </div>
         </main>
       )}
 
       {/* 2. FILE PREVIEW SCREEN */}
       {phase === 'preview' && (
-        <main className="flex-1 flex flex-col justify-center max-w-2xl w-full mx-auto p-6">
+        <main className="flex-1 flex flex-col justify-center max-w-2xl w-full mx-auto p-6 relative z-10">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <button
                 onClick={resetToHome}
-                className="p-1 rounded hover:bg-[var(--bg-secondary)] text-[var(--text-secondary)] transition-colors cursor-pointer"
+                className="p-2 rounded-xl bg-[#190f24] hover:bg-[#231533] border border-[rgba(201,119,127,0.25)] text-[#b8a5b8] hover:text-[#f6e7dc] transition-all cursor-pointer"
                 title="Back to Home"
               >
                 <ArrowLeft className="w-4 h-4" />
               </button>
               <div>
-                <h2 className="font-serif-heading text-lg font-bold text-[var(--text-primary)]">
+                <h2 className="font-serif-heading text-xl font-bold text-[#f6e7dc]">
                   Project Files Ready ({files.length})
                 </h2>
-                <p className="text-xs text-[var(--text-secondary)]">
+                <p className="text-xs text-[#b8a5b8]">
                   Lock files, generated bundles, and binaries filtered out.
                 </p>
               </div>
@@ -880,23 +895,23 @@ export default function Home() {
 
             <button
               onClick={handlePickFolder}
-              className="text-xs text-blue-500 hover:underline cursor-pointer"
+              className="text-xs text-[#f0c98a] hover:text-[#f6e7dc] hover:underline cursor-pointer"
             >
               Change Folder
             </button>
           </div>
 
-          <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-card)] p-3 max-h-72 overflow-y-auto space-y-1 font-mono text-xs">
+          <div className="clyro-glass rounded-3xl border border-[rgba(201,119,127,0.25)] p-4 max-h-80 overflow-y-auto space-y-1 font-mono text-xs shadow-[0_10px_35px_rgba(0,0,0,0.4)]">
             {files.map((f, i) => (
               <div
                 key={i}
-                className="flex items-center justify-between py-1 px-2 rounded hover:bg-[var(--bg-secondary)] text-[var(--text-secondary)]"
+                className="flex items-center justify-between py-1.5 px-3 rounded-xl hover:bg-[rgba(201,119,127,0.1)] text-[#b8a5b8] transition-colors"
               >
-                <div className="flex items-center gap-2 truncate">
-                  <FileCode className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                  <span className="truncate">{f.path}</span>
+                <div className="flex items-center gap-2.5 truncate">
+                  <FileCode className="w-4 h-4 text-[#f0c98a] shrink-0" />
+                  <span className="truncate text-[#f6e7dc]">{f.path}</span>
                 </div>
-                <span className="text-[10px] text-slate-500 shrink-0 ml-4">
+                <span className="text-[11px] text-[#8e7a8e] shrink-0 ml-4 font-mono">
                   {(f.size / 1024).toFixed(1)} KB
                 </span>
               </div>
@@ -906,9 +921,9 @@ export default function Home() {
           <div className="mt-6 flex justify-end">
             <button
               onClick={runScan}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-md bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs tracking-wide shadow-md transition-colors cursor-pointer"
+              className="clyro-btn-primary flex items-center gap-2 px-6 py-3 rounded-2xl text-white font-semibold text-xs tracking-wider uppercase shadow-lg transition-all cursor-pointer hover:shadow-[0_0_25px_rgba(201,119,127,0.4)]"
             >
-              <Zap className="w-3.5 h-3.5 fill-current" />
+              <Zap className="w-4 h-4 fill-current text-[#f0c98a]" />
               <span>Start Fast Scan ({files.length} files)</span>
             </button>
           </div>
@@ -919,19 +934,19 @@ export default function Home() {
       {phase === 'workspace' && scanResult && (
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Top Bar with Live Health Score & Category Filter Buttons */}
-          <div className="px-6 py-3 border-b border-[var(--border-color)] bg-[var(--bg-secondary)] flex flex-wrap items-center justify-between gap-4">
+          <div className="px-6 py-3 border-b border-[rgba(201,119,127,0.18)] bg-[#190f24]/80 backdrop-blur-md flex flex-wrap items-center justify-between gap-4">
             {/* Health Score */}
             <div className="flex items-center gap-3">
               <HealthGauge score={scanResult.healthScore} size={50} />
               <div>
-                <span className="text-[10px] uppercase font-semibold tracking-wider text-[var(--text-secondary)]">
+                <span className="text-[10px] uppercase font-semibold tracking-wider text-[#8e7a8e] font-mono">
                   Health Index
                 </span>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-base font-bold font-serif-heading text-[var(--text-primary)]">
+                  <span className="text-base font-bold font-serif-heading text-[#f6e7dc]">
                     {scanResult.healthScore}/100
                   </span>
-                  <span className="text-xs text-[var(--text-secondary)]">
+                  <span className="text-xs text-[#b8a5b8]">
                     ({scanResult.totalIssues} issues)
                   </span>
                 </div>
@@ -939,21 +954,21 @@ export default function Home() {
             </div>
 
             {/* SIX CATEGORY BUTTONS + ALL (Live counts, filtering across project) */}
-            <div className="flex items-center gap-1.5 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap">
               {/* ALL BUTTON */}
               <button
                 onClick={() => {
                   setCategoryFilter('all');
                   setActiveTab('editor');
                 }}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold border transition-all cursor-pointer ${categoryFilter === 'all' && activeTab === 'editor'
-                    ? 'bg-blue-600 border-blue-500 text-white shadow-sm'
-                    : 'bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer ${categoryFilter === 'all' && activeTab === 'editor'
+                    ? 'clyro-btn-primary border-transparent text-white shadow-[0_0_15px_rgba(201,119,127,0.35)]'
+                    : 'bg-[#0f0816]/80 border-[rgba(201,119,127,0.25)] text-[#b8a5b8] hover:text-[#f6e7dc] hover:border-[rgba(201,119,127,0.45)]'
                   }`}
               >
-                <Layers className="w-3.5 h-3.5 text-blue-400" />
+                <Layers className="w-3.5 h-3.5 text-[#f0c98a]" />
                 <span>All</span>
-                <span className="px-1 py-0.2 rounded text-[10px] bg-slate-900/60 font-mono">
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-[#000000]/60 font-mono text-[#f6e7dc]">
                   {categoryCounts.all}
                 </span>
               </button>
@@ -964,7 +979,7 @@ export default function Home() {
                 { id: 'bug', label: 'Bugs', count: categoryCounts.bug, color: 'text-orange-400', icon: Bug },
                 { id: 'security', label: 'Security', count: categoryCounts.security, color: 'text-red-400', icon: ShieldAlert },
                 { id: 'performance', label: 'Perf', count: categoryCounts.performance, color: 'text-amber-400', icon: Zap },
-                { id: 'dependency', label: 'Deps', count: categoryCounts.dependency, color: 'text-blue-400', icon: Package },
+                { id: 'dependency', label: 'Deps', count: categoryCounts.dependency, color: 'text-indigo-400', icon: Package },
                 { id: 'quality', label: 'Quality', count: categoryCounts.quality, color: 'text-emerald-400', icon: CheckCircle },
               ].map((item) => {
                 const isActive =
@@ -984,15 +999,15 @@ export default function Home() {
                         setCategoryFilter(categoryFilter === item.id ? 'all' : (item.id as CategoryType));
                       }
                     }}
-                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold border transition-all cursor-pointer ${isActive
-                        ? 'bg-blue-600 border-blue-500 text-white shadow-sm'
-                        : 'bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-slate-600'
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer ${isActive
+                        ? 'clyro-btn-primary border-transparent text-white shadow-[0_0_15px_rgba(201,119,127,0.35)]'
+                        : 'bg-[#0f0816]/80 border-[rgba(201,119,127,0.25)] text-[#b8a5b8] hover:text-[#f6e7dc] hover:border-[rgba(201,119,127,0.45)]'
                       }`}
                   >
                     <item.icon className={`w-3.5 h-3.5 ${item.color}`} />
                     <span>{item.label}</span>
                     <span
-                      className={`px-1 py-0.2 rounded text-[10px] font-mono ${item.count > 0 ? 'bg-slate-900/80 font-bold' : 'opacity-60'
+                      className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${item.count > 0 ? 'bg-[#000000]/60 font-bold text-[#f6e7dc]' : 'opacity-60 text-[#8e7a8e]'
                         }`}
                     >
                       {item.count}
@@ -1005,40 +1020,40 @@ export default function Home() {
               {scanResult.issues.filter(i => !i.isApplied && i.suggestedFix !== undefined).length > 0 && (
                 <button
                   onClick={() => applyAllCategoryFixes('all')}
-                  className="flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition-all cursor-pointer border border-emerald-500/40 ml-1"
+                  className="clyro-btn-primary flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold text-white shadow-[0_0_20px_rgba(201,119,127,0.35)] transition-all cursor-pointer ml-1"
                   title="Automatically fix and remove all detected errors in this project"
                 >
-                  <Wand2 className="w-3.5 h-3.5" />
+                  <Wand2 className="w-3.5 h-3.5 text-[#f0c98a]" />
                   <span>Remove All Errors ({scanResult.issues.filter(i => !i.isApplied && i.suggestedFix !== undefined).length})</span>
                 </button>
               )}
             </div>
 
             {/* TAB SWITCHER */}
-            <div className="flex items-center gap-1 bg-[var(--bg-card)] p-0.5 rounded-md border border-[var(--border-color)]">
+            <div className="flex items-center gap-1 bg-[#0f0816]/90 p-1 rounded-full border border-[rgba(201,119,127,0.25)]">
               <button
                 onClick={() => setActiveTab('editor')}
-                className={`px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer ${activeTab === 'editor'
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                className={`px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer ${activeTab === 'editor'
+                    ? 'bg-[rgba(201,119,127,0.25)] border border-[rgba(201,119,127,0.45)] text-[#f6e7dc] font-semibold shadow-sm'
+                    : 'text-[#b8a5b8] hover:text-[#f6e7dc]'
                   }`}
               >
                 Workspace
               </button>
               <button
                 onClick={() => setActiveTab('dependencies')}
-                className={`px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer ${activeTab === 'dependencies'
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                className={`px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer ${activeTab === 'dependencies'
+                    ? 'bg-[rgba(201,119,127,0.25)] border border-[rgba(201,119,127,0.45)] text-[#f6e7dc] font-semibold shadow-sm'
+                    : 'text-[#b8a5b8] hover:text-[#f6e7dc]'
                   }`}
               >
                 Dependencies ({categoryCounts.dependency})
               </button>
               <button
                 onClick={() => setActiveTab('practices')}
-                className={`px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer ${activeTab === 'practices'
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                className={`px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer ${activeTab === 'practices'
+                    ? 'bg-[rgba(201,119,127,0.25)] border border-[rgba(201,119,127,0.45)] text-[#f6e7dc] font-semibold shadow-sm'
+                    : 'text-[#b8a5b8] hover:text-[#f6e7dc]'
                   }`}
               >
                 Best Practices
@@ -1126,6 +1141,6 @@ export default function Home() {
           )}
         </div>
       )}
-    </div>
+    </PageBackground>
   );
 }

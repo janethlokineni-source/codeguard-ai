@@ -10,50 +10,52 @@ interface HealthGaugeProps {
 
 export const HealthGauge: React.FC<HealthGaugeProps> = ({ score, size = 160 }) => {
   const isCompact = size < 80;
-  const strokeWidth = isCompact ? 5 : 12;
+  const strokeWidth = isCompact ? 5 : 10;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (score / 100) * circumference;
-
-  const getColor = (s: number) => {
-    if (s >= 80) return '#10b981'; // Green
-    if (s >= 55) return '#f59e0b'; // Amber
-    return '#f43f5e'; // Red
-  };
+  const gradId = `clyro-gauge-grad-${size}`;
 
   const getLabel = (s: number) => {
-    if (s >= 85) return 'Healthy Project';
-    if (s >= 65) return 'Moderate Risks';
-    return 'Action Required';
+    if (s >= 85) return 'Protected & Healthy';
+    if (s >= 60) return 'Moderate Vulnerabilities';
+    return 'Action Recommended';
   };
 
-  const color = getColor(score);
-
   return (
-    <div className="flex flex-col items-center justify-center">
+    <div className="flex flex-col items-center justify-center select-none">
       <div className="relative" style={{ width: size, height: size }}>
         <svg className="transform -rotate-90" width={size} height={size}>
+          <defs>
+            <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#c9777f" />
+              <stop offset="50%" stopColor="#a26db0" />
+              <stop offset="100%" stopColor="#8a63b5" />
+            </linearGradient>
+          </defs>
+
           {/* Background Track */}
           <circle
             cx={size / 2}
             cy={size / 2}
             r={radius}
-            stroke="#232f48"
+            stroke="rgba(201, 119, 127, 0.15)"
             strokeWidth={strokeWidth}
             fill="transparent"
           />
-          {/* Animated Value Arc */}
+
+          {/* Animated Gradient Value Arc */}
           <motion.circle
             cx={size / 2}
             cy={size / 2}
             r={radius}
-            stroke={color}
+            stroke={`url(#${gradId})`}
             strokeWidth={strokeWidth}
             fill="transparent"
             strokeDasharray={circumference}
             initial={{ strokeDashoffset: circumference }}
             animate={{ strokeDashoffset }}
-            transition={{ duration: 1.2, ease: 'easeOut' }}
+            transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
             strokeLinecap="round"
           />
         </svg>
@@ -61,16 +63,17 @@ export const HealthGauge: React.FC<HealthGaugeProps> = ({ score, size = 160 }) =
         {/* Center Content */}
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <motion.span
-            initial={{ opacity: 0, scale: 0.5 }}
+            initial={{ opacity: 0, scale: 0.6 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6 }}
-            className={`font-extrabold tracking-tight ${isCompact ? 'text-xs' : 'text-3xl'}`}
-            style={{ color }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            className={`font-serif-heading font-bold text-[#f6e7dc] ${
+              isCompact ? 'text-xs' : 'text-3xl'
+            }`}
           >
             {score}
           </motion.span>
           {!isCompact && (
-            <span className="text-[10px] uppercase font-medium tracking-wider text-slate-400 mt-0.5">
+            <span className="text-[10px] uppercase font-semibold tracking-widest text-[#b8a5b8] mt-0.5">
               / 100
             </span>
           )}
@@ -78,7 +81,7 @@ export const HealthGauge: React.FC<HealthGaugeProps> = ({ score, size = 160 }) =
       </div>
 
       {!isCompact && (
-        <span className="mt-2 text-xs font-semibold tracking-wide" style={{ color }}>
+        <span className="mt-2 text-xs font-serif-heading text-[#f6e7dc] tracking-wide">
           {getLabel(score)}
         </span>
       )}

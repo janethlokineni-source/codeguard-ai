@@ -9,10 +9,9 @@ import {
   Check,
   FileCode,
   Sparkles,
-  CheckCheck,
   CheckCircle2,
-  ArrowRight,
 } from 'lucide-react';
+import { Badge } from '@/components/ui/Badge';
 
 interface IssuesPanelProps {
   currentFile: string;
@@ -25,13 +24,6 @@ interface IssuesPanelProps {
   onApplyAllCategoryFixes: (category: CategoryType | 'all') => void;
   onApplyAllFileFixes: () => void;
 }
-
-const severityBadgeStyles: Record<SeverityLevel, { bg: string; text: string; border: string }> = {
-  Critical: { bg: 'bg-rose-500/15', text: 'text-rose-400', border: 'border-rose-500/30' },
-  High: { bg: 'bg-orange-500/15', text: 'text-orange-400', border: 'border-orange-500/30' },
-  Medium: { bg: 'bg-amber-500/15', text: 'text-amber-400', border: 'border-amber-500/30' },
-  Low: { bg: 'bg-blue-500/15', text: 'text-blue-400', border: 'border-blue-500/30' },
-};
 
 export const IssuesPanel: React.FC<IssuesPanelProps> = React.memo(({
   currentFile,
@@ -68,33 +60,37 @@ export const IssuesPanel: React.FC<IssuesPanelProps> = React.memo(({
   }, [selectedCategory]);
 
   return (
-    <div className="h-full flex flex-col bg-[var(--bg-secondary)] border-l border-[var(--border-color)]">
+    <div className="h-full flex flex-col bg-[#190f24] border-l border-[rgba(201,119,127,0.18)]">
       {/* Panel Top Header */}
-      <div className="p-3 border-b border-[var(--border-color)] bg-[var(--bg-card)] flex items-center justify-between gap-2">
+      <div className="p-3.5 border-b border-[rgba(201,119,127,0.18)] bg-[#1d132b]/80 backdrop-blur-md flex items-center justify-between gap-2">
         <div className="min-w-0">
-          <div className="flex items-center gap-1.5 truncate">
-            <span className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)] truncate">
+          <div className="flex items-center gap-2 truncate">
+            <span className="text-xs font-semibold tracking-wider uppercase text-[#f6e7dc] truncate">
               {categoryTitle}
             </span>
-            <span className="px-1.5 py-0.5 rounded text-[11px] font-bold bg-blue-600/20 text-blue-400 border border-blue-500/30">
+            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[#c9777f]/20 text-[#f0c98a] border border-[#c9777f]/30">
               {issues.length}
             </span>
           </div>
           {selectedCategory !== 'all' && (
-            <span className="text-[10px] text-slate-500 block">Filtered across project</span>
+            <span className="text-[10px] text-[#7e6980] block mt-0.5">Filtered across project</span>
           )}
         </div>
 
-        {/* Bulk Action Buttons */}
+        {/* Bulk Action Button */}
         <div className="flex items-center gap-1.5 shrink-0">
           {safeFixesCount > 0 && (
             <button
               onClick={() => onApplyAllCategoryFixes(selectedCategory)}
-              className="flex items-center gap-1 px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-semibold transition-colors shadow-sm cursor-pointer"
-              title={`Fix and remove all ${safeFixesCount} issues`}
+              className="clyro-btn-primary flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-white text-[11px] font-semibold transition-all cursor-pointer shadow-sm"
+              title={`Fix all ${safeFixesCount} issues`}
             >
-              <Wand2 className="w-3 h-3" />
-              <span>{selectedCategory === 'all' ? `Remove All Errors (${safeFixesCount})` : `Fix All (${safeFixesCount})`}</span>
+              <Wand2 className="w-3 h-3 text-[#f0c98a]" />
+              <span>
+                {selectedCategory === 'all'
+                  ? `Remove All Errors (${safeFixesCount})`
+                  : `Fix All (${safeFixesCount})`}
+              </span>
             </button>
           )}
         </div>
@@ -103,77 +99,72 @@ export const IssuesPanel: React.FC<IssuesPanelProps> = React.memo(({
       {/* Issues List */}
       <div className="flex-1 overflow-y-auto p-3 space-y-3">
         {issues.length === 0 ? (
-          <div className="text-center py-16 px-4">
-            <div className="w-10 h-10 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center mx-auto mb-3">
-              <CheckCircle2 className="w-5 h-5" />
+          <div className="text-center py-20 px-4">
+            <div className="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 flex items-center justify-center mx-auto mb-3 shadow-inner">
+              <CheckCircle2 className="w-6 h-6 text-[#86efac]" />
             </div>
-            <h4 className="text-xs font-semibold text-[var(--text-primary)]">
+            <h4 className="font-serif-heading text-sm font-semibold text-[#f6e7dc]">
               No {selectedCategory === 'all' ? 'issues' : selectedCategory} found in this project
             </h4>
-            <p className="text-[11px] text-[var(--text-secondary)] mt-1 max-w-xs mx-auto">
+            <p className="text-[11px] text-[#b8a5b8] mt-1.5 max-w-xs mx-auto leading-relaxed">
               {selectedCategory === 'all'
-                ? 'Your project code passed all static and security analysis checks.'
-                : `Great job! Zero ${selectedCategory} issues were flagged across your scanned files.`}
+                ? 'Your project code passed all static security and logic inspection rules.'
+                : `Zero ${selectedCategory} issues were flagged across your scanned files.`}
             </p>
           </div>
         ) : (
           issues.map((issue) => {
             const isSelected = issue.id === selectedIssueId;
-            const badge = severityBadgeStyles[issue.severity] || severityBadgeStyles.Low;
 
             return (
               <div
                 key={issue.id}
                 onClick={() => onSelectIssue(issue)}
-                className={`p-3 rounded-lg border text-left transition-all cursor-pointer ${
+                className={`p-3.5 rounded-2xl border text-left transition-all duration-200 cursor-pointer ${
                   isSelected
-                    ? 'bg-[var(--bg-card)] border-blue-500 shadow-md ring-1 ring-blue-500/50'
-                    : 'bg-[var(--bg-card)]/70 border-[var(--border-color)] hover:border-slate-600 hover:bg-[var(--bg-card)]'
+                    ? 'bg-[#231533] border-[#c9777f] shadow-lg ring-1 ring-[#c9777f]/50'
+                    : 'bg-[#1d132b]/70 border-[rgba(201,119,127,0.18)] hover:border-[rgba(201,119,127,0.38)] hover:bg-[#1d132b]'
                 }`}
               >
                 {/* File Path & Line Navigation Bar */}
-                <div className="flex items-center justify-between gap-2 mb-2 pb-1.5 border-b border-[var(--border-color)]">
-                  <span className="inline-flex items-center gap-1 text-[11px] font-mono text-[var(--text-primary)] truncate max-w-[200px]">
-                    <FileCode className="w-3 h-3 text-blue-400 shrink-0" />
+                <div className="flex items-center justify-between gap-2 mb-2 pb-1.5 border-b border-[rgba(201,119,127,0.12)]">
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-mono text-[#f6e7dc] truncate max-w-[210px]">
+                    <FileCode className="w-3 h-3 text-[#c9777f] shrink-0" />
                     <span className="truncate">{issue.filePath}</span>
-                    <span className="text-blue-400 font-bold">:{issue.lineNumber}</span>
+                    <span className="text-[#f0c98a] font-bold">:{issue.lineNumber}</span>
                   </span>
 
-                  <div className="flex items-center gap-1 shrink-0">
-                    <span
-                      className={`text-[9px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider ${badge.bg} ${badge.text} ${badge.border}`}
-                    >
-                      {issue.severity}
-                    </span>
-                    <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 uppercase">
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <Badge severity={issue.severity}>{issue.severity}</Badge>
+                    <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full bg-[#0f0816] text-[#b8a5b8] uppercase border border-[rgba(201,119,127,0.15)]">
                       {issue.category}
                     </span>
                   </div>
                 </div>
 
                 {/* Issue Title & AI tag */}
-                <div className="flex items-start justify-between gap-1">
-                  <h4 className="text-xs font-semibold text-[var(--text-primary)] leading-snug">
+                <div className="flex items-start justify-between gap-1.5">
+                  <h4 className="text-xs font-semibold text-[#f6e7dc] leading-snug">
                     {issue.title}
                   </h4>
                   {issue.aiEnhanced && (
-                    <span className="flex items-center gap-0.5 text-[9px] text-emerald-400 bg-emerald-950/60 border border-emerald-800/40 px-1 py-0.2 rounded shrink-0">
+                    <span className="flex items-center gap-1 text-[9px] text-[#f0c98a] bg-[#f0c98a]/10 border border-[#f0c98a]/30 px-1.5 py-0.5 rounded-full shrink-0 font-medium">
                       <Sparkles className="w-2.5 h-2.5" />
-                      AI
+                      AI Refined
                     </span>
                   )}
                 </div>
 
                 {/* Explanation */}
-                <p className="text-[11px] text-[var(--text-secondary)] mt-1 leading-relaxed">
+                <p className="text-[11px] text-[#b8a5b8] mt-1.5 leading-relaxed">
                   {issue.explanation}
                 </p>
 
                 {/* SIDE-BY-SIDE: Problematic Code vs Solution Code */}
                 <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-[10px] font-mono">
-                  {/* Problematic Code */}
-                  <div className="p-2 rounded bg-rose-950/20 border border-rose-900/40 overflow-hidden">
-                    <span className="text-[9px] uppercase font-bold text-rose-400 block mb-1">
+                  {/* Problematic Code (Subtle Rose Tint) */}
+                  <div className="p-2.5 rounded-xl bg-rose-950/20 border border-rose-900/35 overflow-hidden">
+                    <span className="text-[9px] uppercase font-bold text-rose-300 block mb-1 tracking-wider">
                       Problematic Code (L{issue.lineNumber})
                     </span>
                     <code className="text-rose-200 block overflow-x-auto whitespace-pre">
@@ -181,9 +172,9 @@ export const IssuesPanel: React.FC<IssuesPanelProps> = React.memo(({
                     </code>
                   </div>
 
-                  {/* Solution Code */}
-                  <div className="p-2 rounded bg-emerald-950/20 border border-emerald-900/40 overflow-hidden">
-                    <span className="text-[9px] uppercase font-bold text-emerald-400 block mb-1">
+                  {/* Solution Code (Subtle Sage Tint) */}
+                  <div className="p-2.5 rounded-xl bg-emerald-950/20 border border-emerald-900/35 overflow-hidden">
+                    <span className="text-[9px] uppercase font-bold text-[#86efac] block mb-1 tracking-wider">
                       Solution Code
                     </span>
                     <code className="text-emerald-200 block overflow-x-auto whitespace-pre">
@@ -193,17 +184,17 @@ export const IssuesPanel: React.FC<IssuesPanelProps> = React.memo(({
                 </div>
 
                 {/* Actions: Apply Fix / Undo / Copy */}
-                <div className="mt-3 flex items-center justify-between pt-2 border-t border-[var(--border-color)]">
-                  <div className="flex items-center gap-1.5">
+                <div className="mt-3 flex items-center justify-between pt-2 border-t border-[rgba(201,119,127,0.12)]">
+                  <div className="flex items-center gap-2">
                     {issue.isApplied ? (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           onUndoFix(issue);
                         }}
-                        className="flex items-center gap-1 px-2.5 py-1 rounded bg-[var(--bg-secondary)] hover:bg-slate-800 text-slate-300 text-[11px] font-medium border border-[var(--border-color)] transition-colors cursor-pointer"
+                        className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-[#0f0816] hover:bg-[#190f24] text-[#f0c98a] text-[11px] font-medium border border-[rgba(201,119,127,0.25)] transition-colors cursor-pointer"
                       >
-                        <Undo2 className="w-3 h-3 text-amber-400" />
+                        <Undo2 className="w-3 h-3 text-[#f0c98a]" />
                         <span>Undo Fix</span>
                       </button>
                     ) : (
@@ -212,22 +203,22 @@ export const IssuesPanel: React.FC<IssuesPanelProps> = React.memo(({
                           e.stopPropagation();
                           onApplyFix(issue);
                         }}
-                        className="flex items-center gap-1 px-2.5 py-1 rounded bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-semibold transition-colors shadow-sm cursor-pointer"
+                        className="clyro-btn-primary flex items-center gap-1.5 px-3 py-1 rounded-xl text-white text-[11px] font-semibold transition-all cursor-pointer shadow-sm"
                       >
-                        <Wand2 className="w-3 h-3" />
+                        <Wand2 className="w-3 h-3 text-[#f0c98a]" />
                         <span>Apply Fix</span>
                       </button>
                     )}
                   </div>
 
-                  {/* Copy Fix Icon */}
+                  {/* Copy Fix Button */}
                   <button
                     onClick={(e) => handleCopy(issue.suggestedFix, issue.id, e)}
-                    className="p-1 rounded text-slate-400 hover:text-slate-200 hover:bg-[var(--bg-secondary)] transition-colors cursor-pointer"
+                    className="p-1.5 rounded-lg text-[#b8a5b8] hover:text-[#f6e7dc] hover:bg-[rgba(201,119,127,0.15)] transition-colors cursor-pointer"
                     title="Copy Solution Code"
                   >
                     {copiedId === issue.id ? (
-                      <Check className="w-3.5 h-3.5 text-emerald-400" />
+                      <Check className="w-3.5 h-3.5 text-[#86efac]" />
                     ) : (
                       <Copy className="w-3.5 h-3.5" />
                     )}
