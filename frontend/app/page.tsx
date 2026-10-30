@@ -819,8 +819,8 @@ export default function Home() {
       {/* 1. MINIMAL CLASSIC HOME SCREEN */}
       {phase === 'upload' && (
         <main className="flex-1 flex flex-col items-center justify-center p-6 text-center max-w-3xl mx-auto my-auto relative z-10">
-          <div className="w-14 h-14 rounded-2xl bg-[rgba(201,119,127,0.12)] border border-[rgba(201,119,127,0.28)] text-[#c9777f] flex items-center justify-center mb-6 shadow-[0_0_25px_rgba(201,119,127,0.15)]">
-            <Shield className="w-7 h-7" />
+          <div className="w-16 h-16 rounded-2xl border border-[rgba(201,119,127,0.35)] bg-[#0f0816] flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(201,119,127,0.3)] overflow-hidden">
+            <img src="/clyro-icon.png" alt="CLYRO" className="w-full h-full object-cover scale-110" />
           </div>
 
           <h1 className="font-serif-heading text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-[#f6e7dc] leading-tight">

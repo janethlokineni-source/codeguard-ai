@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 
 interface LogoProps {
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'xl';
   showTagline?: boolean;
   className?: string;
   href?: string;
@@ -17,52 +17,48 @@ export const Logo: React.FC<LogoProps> = ({
   href = '/',
 }) => {
   const iconSizes = {
-    sm: 'w-7 h-7 text-xs',
-    md: 'w-8 h-8 text-sm',
-    lg: 'w-10 h-10 text-base',
+    sm: 'w-7 h-7',
+    md: 'w-9 h-9',
+    lg: 'w-12 h-12',
+    xl: 'w-16 h-16',
   };
 
   const titleSizes = {
-    sm: 'text-sm',
-    md: 'text-base',
-    lg: 'text-lg',
+    sm: 'text-sm tracking-[0.16em]',
+    md: 'text-base tracking-[0.2em]',
+    lg: 'text-xl tracking-[0.22em]',
+    xl: 'text-3xl tracking-[0.25em]',
+  };
+
+  const taglineSizes = {
+    sm: 'text-[8px] tracking-[0.22em]',
+    md: 'text-[9px] tracking-[0.25em]',
+    lg: 'text-[11px] tracking-[0.28em]',
+    xl: 'text-[13px] tracking-[0.3em]',
   };
 
   const content = (
-    <div className={`flex items-center gap-2.5 group cursor-pointer select-none ${className}`}>
-      {/* Circular crescent-star icon */}
+    <div className={`flex items-center gap-3 group cursor-pointer select-none ${className}`}>
+      {/* 3D Iridescent Chrome Crescent & Star Emblem */}
       <div
-        className={`${iconSizes[size]} rounded-full flex items-center justify-center relative overflow-hidden transition-transform duration-300 group-hover:scale-105`}
-        style={{
-          background: 'linear-gradient(135deg, #c9777f 0%, #a26db0 55%, #8a63b5 100%)',
-          boxShadow: '0 2px 14px rgba(201, 119, 127, 0.4), 0 0 10px rgba(138, 99, 181, 0.25)',
-        }}
+        className={`${iconSizes[size]} rounded-xl flex items-center justify-center relative overflow-hidden transition-transform duration-300 group-hover:scale-105 border border-[rgba(201,119,127,0.35)] shadow-[0_2px_16px_rgba(138,99,181,0.35)] bg-[#0f0816] shrink-0`}
       >
-        <svg
-          className="w-4 h-4 text-[#f6e7dc]"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          {/* Crescent Moon + Star */}
-          <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" fill="currentColor" fillOpacity="0.2" />
-          <path d="M19 3v4" strokeWidth="1.5" />
-          <path d="M21 5h-4" strokeWidth="1.5" />
-        </svg>
+        <img
+          src="/clyro-icon.png"
+          alt="CLYRO Emblem"
+          className="w-full h-full object-cover scale-110 drop-shadow-[0_0_8px_rgba(201,119,127,0.5)]"
+        />
       </div>
 
       {/* Brand Name & Tagline */}
-      <div className="flex flex-col">
+      <div className="flex flex-col justify-center">
         <span
-          className={`font-serif-heading font-bold tracking-wider text-[#f6e7dc] ${titleSizes[size]} leading-none`}
+          className={`font-sans font-extrabold uppercase text-[#f6e7dc] ${titleSizes[size]} leading-none bg-gradient-to-r from-[#f6e7dc] via-[#e5d4e8] to-[#c9777f] bg-clip-text text-transparent drop-shadow-sm`}
         >
           CLYRO
         </span>
         {showTagline && (
-          <span className="text-[9px] tracking-[0.2em] uppercase font-semibold text-[#b8a5b8] mt-0.5">
+          <span className={`${taglineSizes[size]} uppercase font-semibold text-[#b8a5b8] mt-1`}>
             PRIVATE CODE REVIEW
           </span>
         )}
@@ -76,4 +72,3 @@ export const Logo: React.FC<LogoProps> = ({
 
   return content;
 };
-
