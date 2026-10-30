@@ -39,19 +39,19 @@ export const LighthouseScene: React.FC<LighthouseSceneProps> = ({
     const height = container.clientHeight || 600;
     const aspect = width / height;
 
-    const camera = new THREE.PerspectiveCamera(42, aspect, 0.1, 100);
+    const camera = new THREE.PerspectiveCamera(38, aspect, 0.1, 140);
 
     // Center of lighthouse is around y = 5.2.
     // Base is at y = 0.5, Finial tip is at y = 10.8.
-    // Distance 19.5 with FOV 42 allows full height (~14.5 vertical units in view) plus ample breathing space.
+    // Distance 24.0 with FOV 38 allows full height plus ample breathing space above the spire.
     const updateCameraPosition = (w: number, h: number) => {
       const currentAspect = w / h;
       camera.aspect = currentAspect;
       // Adjust camera distance if the aspect ratio is narrow to prevent cutting off sides or top
-      const baseDistance = 19.0;
+      const baseDistance = 24.0;
       const dist = currentAspect < 1.0 ? baseDistance / Math.max(0.72, currentAspect) : baseDistance;
-      camera.position.set(4.2, 5.8, dist);
-      camera.lookAt(0, 5.4, 0);
+      camera.position.set(0.6, 5.4, dist);
+      camera.lookAt(0, 5.2, 0);
       camera.updateProjectionMatrix();
     };
 
@@ -146,18 +146,18 @@ export const LighthouseScene: React.FC<LighthouseSceneProps> = ({
     const lighthouseGroup = new THREE.Group();
     lighthouseGroup.position.set(0, 1.8, 0);
 
-    // Bright White Masonry Tower Shaft
+    // Bright White Masonry Tower Shaft (crisp, high-contrast like Image 2)
     const towerWhiteMat = new THREE.MeshStandardMaterial({
-      color: 0xfcf9f5,
-      roughness: 0.22,
-      metalness: 0.04,
+      color: 0xffffff,
+      roughness: 0.18,
+      metalness: 0.02,
     });
 
-    // Bold Crimson Accent Bands
+    // Bold Crimson Accent Stripe (matching Image 2)
     const towerCrimsonMat = new THREE.MeshStandardMaterial({
-      color: 0xc42e4d,
-      roughness: 0.28,
-      metalness: 0.06,
+      color: 0xd92d47,
+      roughness: 0.22,
+      metalness: 0.04,
     });
 
     // Foundation stone collar
@@ -176,21 +176,13 @@ export const LighthouseScene: React.FC<LighthouseSceneProps> = ({
     towerShaft.position.y = 3.3;
     lighthouseGroup.add(towerShaft);
 
-    // Crimson Stripe 1 (Lower Band)
-    const bandLower = new THREE.Mesh(
-      new THREE.CylinderGeometry(1.68, 1.76, 0.75, 24),
+    // Single Crisp Crimson Stripe (matching Image 2)
+    const bandSingle = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.68, 1.76, 0.45, 24),
       towerCrimsonMat
     );
-    bandLower.position.y = 2.4;
-    lighthouseGroup.add(bandLower);
-
-    // Crimson Stripe 2 (Upper Band)
-    const bandUpper = new THREE.Mesh(
-      new THREE.CylinderGeometry(1.40, 1.48, 0.75, 24),
-      towerCrimsonMat
-    );
-    bandUpper.position.y = 4.4;
-    lighthouseGroup.add(bandUpper);
+    bandSingle.position.y = 2.45;
+    lighthouseGroup.add(bandSingle);
 
     // Small arched observation windows
     const windowMat = new THREE.MeshBasicMaterial({ color: 0xffea90 });

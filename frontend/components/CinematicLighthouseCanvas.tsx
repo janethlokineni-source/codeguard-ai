@@ -33,21 +33,22 @@ export const CinematicLighthouseCanvas: React.FC<CinematicLighthouseCanvasProps>
     const scene = new THREE.Scene();
     scene.fog = new THREE.FogExp2(0x13081e, 0.007);
 
-    // 2. Camera Setup (Positioned for cinematic laptop framing)
+    // 2. Camera Setup (Positioned for cinematic laptop framing with full lighthouse visibility)
     const width = container.clientWidth || window.innerWidth || 1280;
     const height = container.clientHeight || window.innerHeight || 720;
     const aspect = width / height;
 
-    const camera = new THREE.PerspectiveCamera(42, aspect, 0.1, 120);
+    // FOV 38 with distance 24.5 ensures the full lighthouse (rock to golden finial) has ~2+ units headroom
+    const camera = new THREE.PerspectiveCamera(38, aspect, 0.1, 140);
 
     const updateCamera = (w: number, h: number) => {
       const curAspect = w / h;
       camera.aspect = curAspect;
       // If screen is narrower, adjust distance so lighthouse on left & popup on right fit cleanly
-      const baseDist = 19.5;
-      const dist = curAspect < 1.1 ? baseDist / Math.max(0.75, curAspect) : baseDist;
-      camera.position.set(1.5, 5.8, dist);
-      camera.lookAt(-0.5, 5.2, 0);
+      const baseDist = 24.5;
+      const dist = curAspect < 1.2 ? baseDist / Math.max(0.72, curAspect) : baseDist;
+      camera.position.set(0.6, 5.4, dist);
+      camera.lookAt(-0.6, 5.2, 0);
       camera.updateProjectionMatrix();
     };
 
@@ -66,21 +67,39 @@ export const CinematicLighthouseCanvas: React.FC<CinematicLighthouseCanvasProps>
     container.appendChild(renderer.domElement);
 
     // 4. Lighting: Sunset Mood (Warm, high-contrast, crystal clear)
-    const ambientLight = new THREE.AmbientLight(0x523663, 2.4);
+    const ambientLight = new THREE.AmbientLight(0x5c3c6e, 2.6);
     scene.add(ambientLight);
 
-    // Front-Right Key Light
-    const frontKeyLight = new THREE.DirectionalLight(0xfff1df, 3.8);
-    frontKeyLight.position.set(12, 10, 16);
+    // 6. Rocky Island Base (Fixed on the Left Side: x = -4.4)
+    const islandX = -4.4;
+    const islandZ = 0.5;
+
+    // 7. Realistic High-Contrast 3D Lighthouse Construction
+    const lighthouseGroup = new THREE.Group();
+    // Starts high up in the sky for the drop animation:
+    const initialDropY = reducedMotion ? 1.8 : 24.0;
+    const targetLandedY = 1.8;
+    lighthouseGroup.position.set(islandX, initialDropY, islandZ);
+
+    // Front-Right Key Light targeting the lighthouse directly
+    const frontKeyLight = new THREE.DirectionalLight(0xfff5ea, 4.2);
+    frontKeyLight.position.set(islandX + 8, 12, 14);
+    frontKeyLight.target = lighthouseGroup;
     scene.add(frontKeyLight);
 
+    // Front-Left Fill Light on lighthouse tower face
+    const towerFillLight = new THREE.DirectionalLight(0xffdfd0, 2.2);
+    towerFillLight.position.set(islandX - 7, 8, 10);
+    towerFillLight.target = lighthouseGroup;
+    scene.add(towerFillLight);
+
     // Sunset Horizon Backlight (Amber/coral rim)
-    const sunsetBackLight = new THREE.DirectionalLight(0xf08a65, 3.4);
+    const sunsetBackLight = new THREE.DirectionalLight(0xf08a65, 3.6);
     sunsetBackLight.position.set(-16, 5, -8);
     scene.add(sunsetBackLight);
 
     // Top subtle rim light
-    const topRimLight = new THREE.DirectionalLight(0xa575cc, 1.8);
+    const topRimLight = new THREE.DirectionalLight(0xa575cc, 2.0);
     topRimLight.position.set(-6, 16, 6);
     scene.add(topRimLight);
 
@@ -101,10 +120,6 @@ export const CinematicLighthouseCanvas: React.FC<CinematicLighthouseCanvasProps>
     for (let i = 0; i < posAttr.count; i++) {
       initialY[i] = posAttr.getY(i);
     }
-
-    // 6. Rocky Island Base (Fixed on the Left Side: x = -4.0)
-    const islandX = -4.0;
-    const islandZ = 0.5;
 
     const rockGroup = new THREE.Group();
     rockGroup.position.set(islandX, 0, islandZ);
@@ -140,25 +155,18 @@ export const CinematicLighthouseCanvas: React.FC<CinematicLighthouseCanvasProps>
 
     scene.add(rockGroup);
 
-    // 7. Realistic High-Contrast 3D Lighthouse Construction
-    const lighthouseGroup = new THREE.Group();
-    // Starts high up in the sky for the drop animation:
-    const initialDropY = reducedMotion ? 1.8 : 24.0;
-    const targetLandedY = 1.8;
-    lighthouseGroup.position.set(islandX, initialDropY, islandZ);
-
-    // White Masonry Tower Material
+    // Brilliant White Masonry Tower Material (crisp, high-contrast like Image 2)
     const towerWhiteMat = new THREE.MeshStandardMaterial({
-      color: 0xfcf9f5,
-      roughness: 0.22,
-      metalness: 0.04,
+      color: 0xffffff,
+      roughness: 0.18,
+      metalness: 0.02,
     });
 
-    // Crimson Accent Bands Material
+    // Crimson Accent Stripe Material (bold, vibrant red like Image 2)
     const towerCrimsonMat = new THREE.MeshStandardMaterial({
-      color: 0xc42e4d,
-      roughness: 0.28,
-      metalness: 0.06,
+      color: 0xd92d47,
+      roughness: 0.22,
+      metalness: 0.04,
     });
 
     // Foundation stone collar
@@ -169,7 +177,7 @@ export const CinematicLighthouseCanvas: React.FC<CinematicLighthouseCanvasProps>
     foundationCollar.position.y = 0.3;
     lighthouseGroup.add(foundationCollar);
 
-    // Main Tapered Tower Shaft
+    // Main Tapered White Tower Shaft
     const towerShaft = new THREE.Mesh(
       new THREE.CylinderGeometry(1.28, 1.95, 5.6, 24),
       towerWhiteMat
@@ -177,21 +185,13 @@ export const CinematicLighthouseCanvas: React.FC<CinematicLighthouseCanvasProps>
     towerShaft.position.y = 3.3;
     lighthouseGroup.add(towerShaft);
 
-    // Lower Crimson Band
-    const bandLower = new THREE.Mesh(
-      new THREE.CylinderGeometry(1.68, 1.76, 0.75, 24),
+    // Single Bold Crimson Stripe around the lower-mid tower (matching Image 2)
+    const redStripe = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.68, 1.76, 0.45, 24),
       towerCrimsonMat
     );
-    bandLower.position.y = 2.4;
-    lighthouseGroup.add(bandLower);
-
-    // Upper Crimson Band
-    const bandUpper = new THREE.Mesh(
-      new THREE.CylinderGeometry(1.40, 1.48, 0.75, 24),
-      towerCrimsonMat
-    );
-    bandUpper.position.y = 4.4;
-    lighthouseGroup.add(bandUpper);
+    redStripe.position.y = 2.45;
+    lighthouseGroup.add(redStripe);
 
     // Observation Windows (Warm amber glow)
     const windowMat = new THREE.MeshBasicMaterial({ color: 0xffea90 });
@@ -209,7 +209,7 @@ export const CinematicLighthouseCanvas: React.FC<CinematicLighthouseCanvasProps>
     galleryPlatform.position.y = 6.3;
     lighthouseGroup.add(galleryPlatform);
 
-    // Balcony Railing
+    // Balcony Railing (Distinct metallic railing)
     const railing = new THREE.Mesh(
       new THREE.TorusGeometry(1.78, 0.045, 8, 24),
       new THREE.MeshStandardMaterial({ color: 0x4a285a, metalness: 0.8, roughness: 0.2 })
@@ -218,7 +218,7 @@ export const CinematicLighthouseCanvas: React.FC<CinematicLighthouseCanvasProps>
     railing.position.y = 6.75;
     lighthouseGroup.add(railing);
 
-    // Glass Lantern Room
+    // Glass Lantern Room (Transparent cylinder with internal glow)
     const lanternGlassMat = new THREE.MeshPhysicalMaterial({
       color: 0xfffaea,
       transmission: 0.88,
@@ -234,7 +234,7 @@ export const CinematicLighthouseCanvas: React.FC<CinematicLighthouseCanvasProps>
     lanternRoom.position.y = 7.15;
     lighthouseGroup.add(lanternRoom);
 
-    // Lantern Struts
+    // Lantern Structural Struts
     const strutMat = new THREE.MeshStandardMaterial({ color: 0x23102d, metalness: 0.8 });
     for (let i = 0; i < 6; i++) {
       const angle = (i * Math.PI) / 3;
@@ -253,24 +253,24 @@ export const CinematicLighthouseCanvas: React.FC<CinematicLighthouseCanvasProps>
     dome.position.y = 8.35;
     lighthouseGroup.add(dome);
 
-    // Finial Needle & Ball
+    // Finial Needle & Ball (Golden spire at the top tip)
     const finialBall = new THREE.Mesh(
       new THREE.SphereGeometry(0.14, 12, 12),
-      new THREE.MeshStandardMaterial({ color: 0xf0c98a, metalness: 0.9, roughness: 0.1 })
+      new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.95, roughness: 0.1 })
     );
     finialBall.position.y = 8.95;
     lighthouseGroup.add(finialBall);
 
     const finialSpire = new THREE.Mesh(
       new THREE.CylinderGeometry(0.02, 0.07, 0.7, 8),
-      new THREE.MeshStandardMaterial({ color: 0xf0c98a, metalness: 0.9, roughness: 0.1 })
+      new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.95, roughness: 0.1 })
     );
     finialSpire.position.y = 9.35;
     lighthouseGroup.add(finialSpire);
 
     // 8. Beacon Bulb & Halo
     const lanternLampMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-    const lanternLamp = new THREE.Mesh(new THREE.SphereGeometry(0.42, 16, 16), lanternLampMat);
+    const lanternLamp = new THREE.Mesh(new THREE.SphereGeometry(0.44, 16, 16), lanternLampMat);
     lanternLamp.position.y = 7.15;
     lighthouseGroup.add(lanternLamp);
 
@@ -280,26 +280,26 @@ export const CinematicLighthouseCanvas: React.FC<CinematicLighthouseCanvasProps>
       opacity: 0.0, // starts off until drop lands
       blending: THREE.AdditiveBlending,
     });
-    const lanternHalo = new THREE.Mesh(new THREE.SphereGeometry(0.75, 16, 16), lanternHaloMat);
+    const lanternHalo = new THREE.Mesh(new THREE.SphereGeometry(0.8, 16, 16), lanternHaloMat);
     lanternHalo.position.y = 7.15;
     lighthouseGroup.add(lanternHalo);
 
-    const beaconPointLight = new THREE.PointLight(0xffea9e, 0, 45, 1.0);
+    const beaconPointLight = new THREE.PointLight(0xffea9e, 0, 50, 1.0);
     beaconPointLight.position.y = 7.15;
     lighthouseGroup.add(beaconPointLight);
 
-    // 9. Volumetric Light Beam (Rotating 360 degrees & Stopping at Right)
+    // 9. Volumetric Light Beam (Rotating 360 degrees & Stopping firmly at the Right Side)
     const beamGroup = new THREE.Group();
     beamGroup.position.set(0, 7.15, 0);
 
-    const beamLength = 40;
-    const beamRadius = 5.8;
+    const beamLength = 48;
+    const beamRadius = 6.4;
     const beamGeo = new THREE.ConeGeometry(beamRadius, beamLength, 32, 1, true);
     beamGeo.translate(0, -beamLength / 2, 0);
     beamGeo.rotateX(-Math.PI / 2);
 
     const beamMat = new THREE.MeshBasicMaterial({
-      color: 0xffecb8,
+      color: 0xfff4db,
       transparent: true,
       opacity: 0.0, // starts off until beacon ignites
       blending: THREE.AdditiveBlending,
@@ -310,7 +310,7 @@ export const CinematicLighthouseCanvas: React.FC<CinematicLighthouseCanvasProps>
     beamGroup.add(beamMesh);
 
     // Core Laser Beam
-    const coreBeamGeo = new THREE.ConeGeometry(beamRadius * 0.4, beamLength * 1.15, 16, 1, true);
+    const coreBeamGeo = new THREE.ConeGeometry(beamRadius * 0.38, beamLength * 1.15, 16, 1, true);
     coreBeamGeo.translate(0, (-beamLength * 1.15) / 2, 0);
     coreBeamGeo.rotateX(-Math.PI / 2);
     const coreBeamMat = new THREE.MeshBasicMaterial({
@@ -349,8 +349,8 @@ export const CinematicLighthouseCanvas: React.FC<CinematicLighthouseCanvasProps>
     let dropStartTime = 0;
     let sweepStartTime = 0;
     let sweepTotalAngle = 0;
-    // Exactly pointing toward the right-side login area (positive angle):
-    const stopAngleAtRight = Math.PI * 0.38; // ~68.4° pointing toward the right side!
+    // Exactly pointing toward the right-side login area (positive angle across +Z toward +X):
+    const stopAngleAtRight = Math.PI * 0.40; // ~72° pointing directly toward the right-side login pop-up!
 
     let animationFrameId: number;
     const clock = new THREE.Clock();
@@ -401,16 +401,16 @@ export const CinematicLighthouseCanvas: React.FC<CinematicLighthouseCanvasProps>
       } else if (currentStage === 'beacon_sweep') {
         lighthouseGroup.position.y = targetLandedY;
 
-        // Turn on beacon light
-        lanternHaloMat.opacity = Math.min(0.85, lanternHaloMat.opacity + 0.05);
-        beamMat.opacity = Math.min(0.42, beamMat.opacity + 0.03);
-        coreBeamMat.opacity = Math.min(0.65, coreBeamMat.opacity + 0.04);
-        beaconPointLight.intensity = Math.min(6.5, beaconPointLight.intensity + 0.3);
+        // Turn on beacon light with radiant sunset intensity
+        lanternHaloMat.opacity = Math.min(0.9, lanternHaloMat.opacity + 0.05);
+        beamMat.opacity = Math.min(0.55, beamMat.opacity + 0.04);
+        coreBeamMat.opacity = Math.min(0.75, coreBeamMat.opacity + 0.05);
+        beaconPointLight.intensity = Math.min(8.0, beaconPointLight.intensity + 0.4);
 
         if (sweepStartTime === 0) sweepStartTime = now;
         const sweepElapsed = now - sweepStartTime;
 
-        // Rotate 360 degrees in ~2.0 seconds, smoothly stopping at the right side
+        // Rotate 360 degrees in ~2.0 seconds, smoothly stopping directly at the right side
         const rotationDuration = 2.0;
 
         if (sweepElapsed < rotationDuration) {
@@ -432,10 +432,10 @@ export const CinematicLighthouseCanvas: React.FC<CinematicLighthouseCanvasProps>
         beamGroup.rotation.y = stopAngleAtRight;
 
         // Keep beacon bright and gently pulsing with ambient life
-        lanternHaloMat.opacity = 0.85 + Math.sin(now * 3) * 0.08;
-        beamMat.opacity = 0.44 + Math.sin(now * 2) * 0.04;
-        coreBeamMat.opacity = 0.68 + Math.sin(now * 3) * 0.05;
-        beaconPointLight.intensity = 6.5 + Math.sin(now * 2) * 0.5;
+        lanternHaloMat.opacity = 0.9 + Math.sin(now * 3) * 0.08;
+        beamMat.opacity = 0.52 + Math.sin(now * 2) * 0.04;
+        coreBeamMat.opacity = 0.75 + Math.sin(now * 3) * 0.04;
+        beaconPointLight.intensity = 8.0 + Math.sin(now * 2) * 0.6;
       }
 
       renderer.render(scene, camera);

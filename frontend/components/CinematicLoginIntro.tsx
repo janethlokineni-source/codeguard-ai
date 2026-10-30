@@ -232,6 +232,16 @@ export const CinematicLoginIntro: React.FC<CinematicLoginIntroProps> = ({
             : 'opacity-0 translate-y-6 scale-95'
         }`}
       >
+        {/* Lighthouse Beam Spotlight Floor Glow hitting the right side */}
+        <div
+          className="absolute right-0 top-1/2 -translate-y-1/2 w-[650px] h-[650px] rounded-full pointer-events-none"
+          style={{
+            background:
+              'radial-gradient(ellipse at 65% 50%, rgba(255, 244, 219, 0.24) 0%, rgba(201, 119, 127, 0.16) 45%, transparent 75%)',
+            filter: 'blur(36px)',
+          }}
+        />
+
         {/* The Login Pop-Up Card */}
         <div className="w-full max-w-[430px] rounded-3xl bg-[#14081e]/92 border border-[rgba(201,119,127,0.45)] backdrop-blur-2xl shadow-[0_10px_50px_rgba(0,0,0,0.85),0_0_35px_rgba(201,119,127,0.35)] p-6 sm:p-8 pointer-events-auto relative overflow-hidden">
           {/* Top Ambient Highlight Rim */}
