@@ -282,6 +282,106 @@ COMPILED_RULES: List[CompiledRule] = [
         "Excessive nesting hampers code readability, introduces cognitive load, and increases cyclomatic complexity. Consider early returns or extracting functions.",
         lambda line, l: line.strip(),
         ["javascript", "typescript", "python", "java"]
+    ),
+
+    # 18. Insecure target="_blank" without rel="noopener noreferrer"
+    CompiledRule(
+        r"""<a\b[^>]*\btarget\s*=\s*['"]_blank['"](?![^>]*\brel\s*=\s*['"][^'"]*noopener)""",
+        "security", "Medium",
+        "Reverse Tabnabbing Security Risk (target='_blank')",
+        "Opening external links with target='_blank' without rel='noopener noreferrer' allows the opened page to hijack window.opener and redirect users to phishing sites.",
+        lambda line, l: line.replace('target="_blank"', 'target="_blank" rel="noopener noreferrer"').replace("target='_blank'", "target='_blank' rel='noopener noreferrer'"),
+        ["javascript", "typescript", "html"]
+    ),
+
+    # 19. Array Index as React Key
+    CompiledRule(
+        r"""\bkey\s*=\s*\{\s*(?:index|idx|i)\s*\}""",
+        "bug", "Medium",
+        "Array Index Used as React Key",
+        "Using array indices (index, idx, i) as React keys corrupts component state during list re-ordering, filtering, or deletions. Use a stable unique identifier like item.id.",
+        lambda line, l: re.sub(r"""\bkey\s*=\s*\{\s*(?:index|idx|i)\s*\}""", "key={item.id || index}", line),
+        ["javascript", "typescript"]
+    ),
+
+    # 20. Cleartext Insecure HTTP URL
+    CompiledRule(
+        r"""['"]http:\/\/(?!localhost|127\.0\.0\.1|0\.0\.0\.0)[a-zA-Z0-9\.\-_]+""",
+        "security", "High",
+        "Insecure Cleartext HTTP Protocol",
+        "Transmitting data over cleartext HTTP exposes credentials and sensitive payloads to network sniffing and Man-In-The-Middle (MITM) tampering. Always use HTTPS.",
+        lambda line, l: line.replace("http://", "https://"),
+        ["javascript", "typescript", "python", "java"]
+    ),
+
+    # 21. Hardcoded Localhost Endpoint in Code
+    CompiledRule(
+        r"""['"]https?:\/\/(?:localhost|127\.0\.0\.1):\d+[^'"]*['"]""",
+        "quality", "Medium",
+        "Hardcoded Localhost Endpoint",
+        "Hardcoded localhost URLs fail in staging and production environments. Extract the API base URL to an environment variable.",
+        lambda line, l: re.sub(r"""['"]https?:\/\/(?:localhost|127\.0\.0\.1):\d+[^'"]*['"]""", "process.env.NEXT_PUBLIC_API_URL || '/api'", line) if l in ['javascript', 'typescript'] else re.sub(r"""['"]https?:\/\/(?:localhost|127\.0\.0\.1):\d+[^'"]*['"]""", "os.getenv('API_BASE_URL', '')", line),
+        ["javascript", "typescript", "python"]
+    ),
+
+    # 22. Inline Style Object in JSX
+    CompiledRule(
+        r"""\bstyle\s*=\s*\{\{\s*(?!display:\s*['"]none['"])[^}]+\s*\}\}""",
+        "performance", "Low",
+        "Inline Style Object Re-creation",
+        "Inline style objects in JSX force the JavaScript engine to allocate a new object on every render cycle, triggering unnecessary DOM reconciliation and sub-tree re-renders.",
+        lambda line, l: line.replace("style={{", "className=\"/* extracted-styles */\" style={{"),
+        ["javascript", "typescript"]
+    ),
+
+    # 23. Direct React State Mutation
+    CompiledRule(
+        r"""(?:\bthis\.state\.\w+\s*=|^\s*(?:const\s+)?state\.\w+\s*=\s*[^=])""",
+        "bug", "High",
+        "Direct React State Mutation",
+        "Directly mutating component state bypasses React's reconciliation cycle, resulting in missed UI updates and race conditions. Always use setState or state updater functions.",
+        lambda line, l: re.sub(r"""state\.(\w+)\s*=\s*(.+);?""", r"setState(prev => ({ ...prev, \1: \2 }));", line),
+        ["javascript", "typescript"]
+    ),
+
+    # 24. Potential Memory Leak in Component
+    CompiledRule(
+        r"""\b(?:window\.addEventListener|document\.addEventListener|setInterval)\(""",
+        "performance", "Medium",
+        "Potential Memory Leak (Uncleaned Listener/Timer)",
+        "Attaching global event listeners or intervals without returning an explicit cleanup function in useEffect causes memory leaks and duplicate handler firings on unmount.",
+        lambda line, l: f"{line} // Ensure cleanup return is defined in useEffect",
+        ["javascript", "typescript"]
+    ),
+
+    # 25. Floating Promise (Unawaited API Call)
+    CompiledRule(
+        r"""^\s*(?:fetch|axios\.(?:get|post|put|delete))\([^)]*\);""",
+        "bug", "High",
+        "Floating Promise (Unawaited Network Call)",
+        "Executing an asynchronous network request without 'await' or a '.catch()' error handler leaves unhandled rejections and causes race conditions.",
+        lambda line, l: f"await {line.strip()}",
+        ["javascript", "typescript"]
+    ),
+
+    # 26. Insecure Deserialization in Python
+    CompiledRule(
+        r"""\b(?:pickle\.loads|yaml\.load\([^,)]*\))\(""",
+        "security", "Critical",
+        "Insecure Deserialization Risk",
+        "Deserializing untrusted data with pickle or raw yaml.load allows arbitrary code execution. Use yaml.safe_load or JSON serialization instead.",
+        lambda line, l: line.replace("yaml.load(", "yaml.safe_load(").replace("pickle.loads(", "json.loads("),
+        ["python"]
+    ),
+
+    # 27. Debug Mode Enabled in Code
+    CompiledRule(
+        r"""\b(?:app\.run\(.*debug\s*=\s*True|DEBUG\s*=\s*True)""",
+        "security", "High",
+        "Debug Mode Enabled in Code",
+        "Running in debug mode exposes internal stack traces, interactive debug consoles, and environment secrets to visitors.",
+        lambda line, l: line.replace("debug=True", "debug=False").replace("DEBUG = True", "DEBUG = False"),
+        ["python", "javascript", "typescript"]
     )
 ]
 
