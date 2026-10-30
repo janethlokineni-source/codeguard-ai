@@ -35,7 +35,6 @@ import { ConfirmModal } from '@/components/ConfirmModal';
 import { Logo } from '@/components/ui/Logo';
 import { StatusChip } from '@/components/ui/StatusChip';
 import { PageBackground } from '@/components/ui/PageBackground';
-import LoginPage from './login/page';
 
 // Lazy-load Monaco Editor for ultra-fast initial page load
 const MonacoCodeWorkspace = dynamic(
@@ -123,8 +122,6 @@ export default function Home() {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [confirmLeaveOpen, setConfirmLeaveOpen] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  // Always start unauthenticated so opening the website always stably presents the login page with lighthouse
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
   const folderInputRef = useRef<HTMLInputElement>(null);
   const filesInputRef = useRef<HTMLInputElement>(null);
@@ -737,11 +734,6 @@ export default function Home() {
 
   const activeFile = files.find((f) => f.path === activeFilePath);
 
-  // When opening the website, show the polished login page first
-  if (!isAuthenticated) {
-    return <LoginPage onSuccess={() => setIsAuthenticated(true)} />;
-  }
-
   return (
     <PageBackground className="min-h-screen flex flex-col text-[var(--text-primary)]">
       <ToastContainer toasts={toasts} onDismiss={removeToast} />
@@ -790,22 +782,14 @@ export default function Home() {
             </>
           )}
 
-          <button
-            onClick={() => {
-              try {
-                localStorage.removeItem('clyro_auth');
-              } catch (e) {
-                // ignore
-              }
-              setIsAuthenticated(false);
-              resetToHome();
-            }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#190f24] hover:bg-[#231533] text-[#b8a5b8] hover:text-[#f6e7dc] text-xs font-medium border border-[rgba(201,119,127,0.25)] transition-all cursor-pointer shadow-sm"
-            title="Sign out of private session"
+          <a
+            href="/login"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#190f24] hover:bg-[#231533] text-[#f6e7dc] text-xs font-medium border border-[rgba(201,119,127,0.25)] transition-all cursor-pointer shadow-sm"
+            title="Account / Session"
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-[#86efac]"></span>
-            <span>Sign out</span>
-          </button>
+            <span className="w-2 h-2 rounded-full bg-[#f0c98a]"></span>
+            <span>Sign in</span>
+          </a>
         </div>
 
         {/* Dynamic Scanning Line */}
@@ -835,8 +819,8 @@ export default function Home() {
       {/* 1. MINIMAL CLASSIC HOME SCREEN */}
       {phase === 'upload' && (
         <main className="flex-1 flex flex-col items-center justify-center p-6 text-center max-w-3xl mx-auto my-auto relative z-10">
-          <div className="w-16 h-16 rounded-2xl border border-[rgba(201,119,127,0.35)] bg-[#0f0816] flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(201,119,127,0.3)] overflow-hidden">
-            <img src="/clyro-icon.png" alt="CLYRO" className="w-full h-full object-cover scale-110" />
+          <div className="w-14 h-14 rounded-2xl bg-[rgba(201,119,127,0.12)] border border-[rgba(201,119,127,0.28)] text-[#c9777f] flex items-center justify-center mb-6 shadow-[0_0_25px_rgba(201,119,127,0.15)]">
+            <Shield className="w-7 h-7" />
           </div>
 
           <h1 className="font-serif-heading text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-[#f6e7dc] leading-tight">
