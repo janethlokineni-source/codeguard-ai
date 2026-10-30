@@ -123,20 +123,8 @@ export default function Home() {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [confirmLeaveOpen, setConfirmLeaveOpen] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  // Always start unauthenticated so opening the website always stably presents the login page with lighthouse
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [authChecked, setAuthChecked] = useState<boolean>(false);
-
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem('clyro_auth');
-      if (stored === 'true') {
-        setIsAuthenticated(true);
-      }
-    } catch (e) {
-      // ignore
-    }
-    setAuthChecked(true);
-  }, []);
 
   const folderInputRef = useRef<HTMLInputElement>(null);
   const filesInputRef = useRef<HTMLInputElement>(null);

@@ -33,21 +33,23 @@ export const LighthouseScene: React.FC<LighthouseSceneProps> = ({
     const scene = new THREE.Scene();
     scene.fog = new THREE.FogExp2(0x190f24, 0.022);
 
-    // 2. Camera setup
+    // 2. Camera setup - Rock-solid stable positioning
+    const width = container.clientWidth || 800;
+    const height = container.clientHeight || 600;
     const camera = new THREE.PerspectiveCamera(
       45,
-      container.clientWidth / container.clientHeight,
+      width / height,
       0.1,
       100
     );
-    // Positioned to give a cinematic 3/4 perspective of the lighthouse and the sweeping beam
+    // Positioned to give a rock-stable cinematic 3/4 perspective of the lighthouse and sweeping beam
     camera.position.set(7, 5.5, 14);
     camera.lookAt(-1.5, 3.2, 0);
 
     // 3. Renderer setup
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
-    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setSize(width, height);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.15;
     container.appendChild(renderer.domElement);
@@ -326,9 +328,9 @@ export const LighthouseScene: React.FC<LighthouseSceneProps> = ({
         }
         pos.needsUpdate = true;
 
-        // Subtle camera breathing
-        camera.position.x = 7 + Math.sin(elapsed * 0.25) * 0.3;
-        camera.position.y = 5.5 + Math.cos(elapsed * 0.3) * 0.15;
+        // Camera is rock-stable (no camera wobble/breathing)
+        camera.position.set(7, 5.5, 14);
+        camera.lookAt(-1.5, 3.2, 0);
       } else {
         // Static cinematic beam position for reduced motion
         beamGroup.rotation.y = -Math.PI * 0.35;
@@ -339,21 +341,23 @@ export const LighthouseScene: React.FC<LighthouseSceneProps> = ({
 
     animate();
 
-    // 13. Handle Window / Container Resize
-    const handleResize = () => {
-      if (!container) return;
-      const width = container.clientWidth;
-      const height = container.clientHeight;
-      camera.aspect = width / height;
-      camera.updateProjectionMatrix();
-      renderer.setSize(width, height);
-    };
-
-    window.addEventListener('resize', handleResize);
+    // 13. Handle Window / Container Resize with ResizeObserver for rock-solid stability
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const w = entry.contentRect.width;
+        const h = entry.contentRect.height;
+        if (w > 0 && h > 0) {
+          camera.aspect = w / h;
+          camera.updateProjectionMatrix();
+          renderer.setSize(w, h);
+        }
+      }
+    });
+    resizeObserver.observe(container);
 
     // 14. Cleanup and full disposal
     return () => {
-      window.removeEventListener('resize', handleResize);
+      resizeObserver.disconnect();
       cancelAnimationFrame(animationFrameId);
 
       scene.traverse((obj) => {
