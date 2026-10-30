@@ -1,29 +1,29 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Issue, SeverityLevel } from '@/types/scanner';
+import React, { useState, useMemo } from 'react';
+import { Issue, SeverityLevel, CategoryType } from '@/types/scanner';
 import {
   Wand2,
   Undo2,
   Copy,
   Check,
-  ChevronRight,
-  AlertTriangle,
-  ShieldAlert,
+  FileCode,
   Sparkles,
-  Eye,
   CheckCheck,
+  CheckCircle2,
+  ArrowRight,
 } from 'lucide-react';
 
 interface IssuesPanelProps {
   currentFile: string;
   issues: Issue[];
+  selectedCategory: CategoryType | 'all';
   selectedIssueId: string | null;
   onSelectIssue: (issue: Issue) => void;
   onApplyFix: (issue: Issue) => void;
   onUndoFix: (issue: Issue) => void;
-  onApplyAllSafeFixes: () => void;
-  onApplyAllProjectFixes: () => void;
+  onApplyAllCategoryFixes: (category: CategoryType | 'all') => void;
+  onApplyAllFileFixes: () => void;
 }
 
 const severityBadgeStyles: Record<SeverityLevel, { bg: string; text: string; border: string }> = {
@@ -33,18 +33,18 @@ const severityBadgeStyles: Record<SeverityLevel, { bg: string; text: string; bor
   Low: { bg: 'bg-blue-500/15', text: 'text-blue-400', border: 'border-blue-500/30' },
 };
 
-export const IssuesPanel: React.FC<IssuesPanelProps> = ({
+export const IssuesPanel: React.FC<IssuesPanelProps> = React.memo(({
   currentFile,
   issues,
+  selectedCategory,
   selectedIssueId,
   onSelectIssue,
   onApplyFix,
   onUndoFix,
-  onApplyAllSafeFixes,
-  onApplyAllProjectFixes,
+  onApplyAllCategoryFixes,
+  onApplyAllFileFixes,
 }) => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [diffPreviewIssueId, setDiffPreviewIssueId] = useState<string | null>(null);
 
   const handleCopy = (text: string, id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -53,58 +53,73 @@ export const IssuesPanel: React.FC<IssuesPanelProps> = ({
     setTimeout(() => setCopiedId(null), 1800);
   };
 
-  const safeFixesCount = issues.filter((i) => !i.isApplied && i.suggestedFix).length;
+  const safeFixesCount = useMemo(() => {
+    return issues.filter((i) => !i.isApplied && i.suggestedFix !== undefined).length;
+  }, [issues]);
+
+  const categoryTitle = useMemo(() => {
+    if (selectedCategory === 'all') return 'All Issues';
+    if (selectedCategory === 'error') return 'Programming Errors';
+    if (selectedCategory === 'bug') return 'Bugs & Logic Risks';
+    if (selectedCategory === 'security') return 'Security Vulnerabilities';
+    if (selectedCategory === 'performance') return 'Performance Bottlenecks';
+    if (selectedCategory === 'quality') return 'Code Quality & Cleanliness';
+    return `${selectedCategory} Issues`;
+  }, [selectedCategory]);
 
   return (
-    <div className="h-full flex flex-col bg-slate-950/80 border-l border-slate-800/80">
+    <div className="h-full flex flex-col bg-[var(--bg-secondary)] border-l border-[var(--border-color)]">
       {/* Panel Top Header */}
-      <div className="p-3 border-b border-slate-800/80 flex items-center justify-between">
-        <div>
-          <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-            Issues in File
-          </span>
-          <span className="ml-2 px-1.5 py-0.5 rounded text-[11px] font-bold bg-slate-800 text-slate-200">
-            {issues.length}
-          </span>
+      <div className="p-3 border-b border-[var(--border-color)] bg-[var(--bg-card)] flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5 truncate">
+            <span className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)] truncate">
+              {categoryTitle}
+            </span>
+            <span className="px-1.5 py-0.5 rounded text-[11px] font-bold bg-blue-600/20 text-blue-400 border border-blue-500/30">
+              {issues.length}
+            </span>
+          </div>
+          {selectedCategory !== 'all' && (
+            <span className="text-[10px] text-slate-500 block">Filtered across project</span>
+          )}
         </div>
 
-        {/* Apply All Safe Fixes Buttons */}
-        <div className="flex items-center gap-1.5">
+        {/* Bulk Action Buttons */}
+        <div className="flex items-center gap-1.5 shrink-0">
           {safeFixesCount > 0 && (
             <button
-              onClick={onApplyAllSafeFixes}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-md bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-medium transition-colors shadow-sm cursor-pointer"
-              title="Apply all safe fixes in this file"
+              onClick={() => onApplyAllCategoryFixes(selectedCategory)}
+              className="flex items-center gap-1 px-2.5 py-1 rounded bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-semibold transition-colors shadow-sm cursor-pointer"
+              title={`Fix all ${safeFixesCount} issues in this view`}
             >
               <Wand2 className="w-3 h-3" />
-              <span>Fix File ({safeFixesCount})</span>
+              <span>Fix All ({safeFixesCount})</span>
             </button>
           )}
-
-          <button
-            onClick={onApplyAllProjectFixes}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-medium border border-slate-700 transition-colors cursor-pointer"
-            title="Apply all safe fixes across all files"
-          >
-            <CheckCheck className="w-3 h-3 text-blue-400" />
-            <span>Fix All Project</span>
-          </button>
         </div>
       </div>
 
       {/* Issues List */}
       <div className="flex-1 overflow-y-auto p-3 space-y-3">
         {issues.length === 0 ? (
-          <div className="text-center py-12 text-slate-500">
-            <Check className="w-8 h-8 text-emerald-400 mx-auto mb-2" />
-            <p className="text-xs font-medium text-slate-300">Clean file</p>
-            <p className="text-[11px] text-slate-500 mt-0.5">No issues detected on this file.</p>
+          <div className="text-center py-16 px-4">
+            <div className="w-10 h-10 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center mx-auto mb-3">
+              <CheckCircle2 className="w-5 h-5" />
+            </div>
+            <h4 className="text-xs font-semibold text-[var(--text-primary)]">
+              No {selectedCategory === 'all' ? 'issues' : selectedCategory} found in this project
+            </h4>
+            <p className="text-[11px] text-[var(--text-secondary)] mt-1 max-w-xs mx-auto">
+              {selectedCategory === 'all'
+                ? 'Your project code passed all static and security analysis checks.'
+                : `Great job! Zero ${selectedCategory} issues were flagged across your scanned files.`}
+            </p>
           </div>
         ) : (
           issues.map((issue) => {
             const isSelected = issue.id === selectedIssueId;
             const badge = severityBadgeStyles[issue.severity] || severityBadgeStyles.Low;
-            const isPreviewingDiff = diffPreviewIssueId === issue.id;
 
             return (
               <div
@@ -112,136 +127,112 @@ export const IssuesPanel: React.FC<IssuesPanelProps> = ({
                 onClick={() => onSelectIssue(issue)}
                 className={`p-3 rounded-lg border text-left transition-all cursor-pointer ${
                   isSelected
-                    ? 'bg-slate-900 border-blue-500 shadow-md ring-1 ring-blue-500/40'
-                    : 'bg-slate-900/60 border-slate-800/90 hover:border-slate-700 hover:bg-slate-900'
+                    ? 'bg-[var(--bg-card)] border-blue-500 shadow-md ring-1 ring-blue-500/50'
+                    : 'bg-[var(--bg-card)]/70 border-[var(--border-color)] hover:border-slate-600 hover:bg-[var(--bg-card)]'
                 }`}
               >
-                {/* Header line: Line Number + Severity + Category */}
-                <div className="flex items-center justify-between gap-2 mb-1.5">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="font-mono text-xs font-bold text-blue-400 bg-blue-950/60 border border-blue-900/60 px-1.5 py-0.5 rounded">
-                      L{issue.lineNumber}
-                    </span>
+                {/* File Path & Line Navigation Bar */}
+                <div className="flex items-center justify-between gap-2 mb-2 pb-1.5 border-b border-[var(--border-color)]">
+                  <span className="inline-flex items-center gap-1 text-[11px] font-mono text-[var(--text-primary)] truncate max-w-[200px]">
+                    <FileCode className="w-3 h-3 text-blue-400 shrink-0" />
+                    <span className="truncate">{issue.filePath}</span>
+                    <span className="text-blue-400 font-bold">:{issue.lineNumber}</span>
+                  </span>
+
+                  <div className="flex items-center gap-1 shrink-0">
                     <span
-                      className={`text-[10px] font-semibold px-2 py-0.5 rounded border uppercase tracking-wider ${badge.bg} ${badge.text} ${badge.border}`}
+                      className={`text-[9px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider ${badge.bg} ${badge.text} ${badge.border}`}
                     >
                       {issue.severity}
                     </span>
-                    <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 uppercase">
+                    <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 uppercase">
                       {issue.category}
                     </span>
                   </div>
+                </div>
 
+                {/* Issue Title & AI tag */}
+                <div className="flex items-start justify-between gap-1">
+                  <h4 className="text-xs font-semibold text-[var(--text-primary)] leading-snug">
+                    {issue.title}
+                  </h4>
                   {issue.aiEnhanced && (
-                    <span className="flex items-center gap-1 text-[10px] text-emerald-400 bg-emerald-950/50 border border-emerald-800/40 px-1.5 py-0.5 rounded">
+                    <span className="flex items-center gap-0.5 text-[9px] text-emerald-400 bg-emerald-950/60 border border-emerald-800/40 px-1 py-0.2 rounded shrink-0">
                       <Sparkles className="w-2.5 h-2.5" />
                       AI
                     </span>
                   )}
                 </div>
 
-                {/* Title */}
-                <h4 className="text-xs font-semibold text-slate-100 leading-snug">
-                  {issue.title}
-                </h4>
-
-                {/* Plain-English Explanation */}
-                <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                {/* Explanation */}
+                <p className="text-[11px] text-[var(--text-secondary)] mt-1 leading-relaxed">
                   {issue.explanation}
                 </p>
 
-                {/* Diff Preview Mode */}
-                {isPreviewingDiff ? (
-                  <div className="mt-2.5 p-2 rounded bg-slate-950 border border-slate-800 font-mono text-[11px] space-y-1">
-                    <div className="flex items-start gap-1 text-rose-400 bg-rose-950/30 p-1 rounded">
-                      <span className="select-none text-rose-500">-</span>
-                      <span className="break-all whitespace-pre-wrap">{issue.snippet}</span>
-                    </div>
-                    <div className="flex items-start gap-1 text-emerald-400 bg-emerald-950/30 p-1 rounded">
-                      <span className="select-none text-emerald-500">+</span>
-                      <span className="break-all whitespace-pre-wrap">
-                        {issue.suggestedFix || '/* removed line */'}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-end gap-2 pt-1">
+                {/* SIDE-BY-SIDE: Problematic Code vs Solution Code */}
+                <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-[10px] font-mono">
+                  {/* Problematic Code */}
+                  <div className="p-2 rounded bg-rose-950/20 border border-rose-900/40 overflow-hidden">
+                    <span className="text-[9px] uppercase font-bold text-rose-400 block mb-1">
+                      Problematic Code (L{issue.lineNumber})
+                    </span>
+                    <code className="text-rose-200 block overflow-x-auto whitespace-pre">
+                      {issue.snippet}
+                    </code>
+                  </div>
+
+                  {/* Solution Code */}
+                  <div className="p-2 rounded bg-emerald-950/20 border border-emerald-900/40 overflow-hidden">
+                    <span className="text-[9px] uppercase font-bold text-emerald-400 block mb-1">
+                      Solution Code
+                    </span>
+                    <code className="text-emerald-200 block overflow-x-auto whitespace-pre">
+                      {issue.suggestedFix === '' ? '/* remove line */' : issue.suggestedFix}
+                    </code>
+                  </div>
+                </div>
+
+                {/* Actions: Apply Fix / Undo / Copy */}
+                <div className="mt-3 flex items-center justify-between pt-2 border-t border-[var(--border-color)]">
+                  <div className="flex items-center gap-1.5">
+                    {issue.isApplied ? (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          setDiffPreviewIssueId(null);
+                          onUndoFix(issue);
                         }}
-                        className="text-[10px] text-slate-400 hover:text-slate-200 cursor-pointer"
+                        className="flex items-center gap-1 px-2.5 py-1 rounded bg-[var(--bg-secondary)] hover:bg-slate-800 text-slate-300 text-[11px] font-medium border border-[var(--border-color)] transition-colors cursor-pointer"
                       >
-                        Cancel
+                        <Undo2 className="w-3 h-3 text-amber-400" />
+                        <span>Undo Fix</span>
                       </button>
+                    ) : (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          setDiffPreviewIssueId(null);
                           onApplyFix(issue);
                         }}
-                        className="px-2 py-0.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-semibold cursor-pointer"
+                        className="flex items-center gap-1 px-2.5 py-1 rounded bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-semibold transition-colors shadow-sm cursor-pointer"
                       >
-                        Confirm Fix
+                        <Wand2 className="w-3 h-3" />
+                        <span>Apply Fix</span>
                       </button>
-                    </div>
+                    )}
                   </div>
-                ) : (
-                  /* Action Buttons: Apply Fix / Undo / Copy / Diff */
-                  <div className="mt-3 flex items-center justify-between pt-2 border-t border-slate-800/80">
-                    <div className="flex items-center gap-1.5">
-                      {issue.isApplied ? (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onUndoFix(issue);
-                          }}
-                          className="flex items-center gap-1 px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-medium border border-slate-700 transition-colors cursor-pointer"
-                        >
-                          <Undo2 className="w-3 h-3 text-amber-400" />
-                          <span>Undo</span>
-                        </button>
-                      ) : (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onApplyFix(issue);
-                          }}
-                          className="flex items-center gap-1 px-2.5 py-1 rounded bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-semibold transition-colors shadow-sm cursor-pointer"
-                        >
-                          <Wand2 className="w-3 h-3" />
-                          <span>Apply Fix</span>
-                        </button>
-                      )}
 
-                      {!issue.isApplied && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setDiffPreviewIssueId(issue.id);
-                          }}
-                          className="flex items-center gap-1 px-2 py-1 rounded text-slate-400 hover:text-slate-200 hover:bg-slate-800 text-[11px] transition-colors cursor-pointer"
-                          title="Preview Line Diff"
-                        >
-                          <Eye className="w-3 h-3" />
-                          <span>Diff</span>
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Copy Fix Secondary Icon */}
-                    <button
-                      onClick={(e) => handleCopy(issue.suggestedFix, issue.id, e)}
-                      className="p-1 rounded text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors cursor-pointer"
-                      title="Copy Suggested Fix"
-                    >
-                      {copiedId === issue.id ? (
-                        <Check className="w-3.5 h-3.5 text-emerald-400" />
-                      ) : (
-                        <Copy className="w-3.5 h-3.5" />
-                      )}
-                    </button>
-                  </div>
-                )}
+                  {/* Copy Fix Icon */}
+                  <button
+                    onClick={(e) => handleCopy(issue.suggestedFix, issue.id, e)}
+                    className="p-1 rounded text-slate-400 hover:text-slate-200 hover:bg-[var(--bg-secondary)] transition-colors cursor-pointer"
+                    title="Copy Solution Code"
+                  >
+                    {copiedId === issue.id ? (
+                      <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    ) : (
+                      <Copy className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+                </div>
               </div>
             );
           })
@@ -249,5 +240,6 @@ export const IssuesPanel: React.FC<IssuesPanelProps> = ({
       </div>
     </div>
   );
-};
+});
 
+IssuesPanel.displayName = 'IssuesPanel';

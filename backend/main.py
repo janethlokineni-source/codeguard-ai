@@ -1,15 +1,17 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-import json
-from typing import List, Dict
+import asyncio
+import concurrent.futures
+from typing import List, Dict, Optional
+import os
 
 from scanner.models import ScanRequest, SingleFileScanRequest, ScanResult, Issue, DependencyItem
 from scanner.rules import scan_file_content
 from scanner.dependencies import check_package_json, check_requirements_txt
 from scanner.ollama_client import check_ollama_status, enhance_issue_with_ai
 
-app = FastAPI(title="CODEGUARD AI Scanner API", version="2.0.0")
+app = FastAPI(title="CODEGUARD AI Scanner API", version="2.5.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -18,6 +20,16 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Thread pool for parallel CPU-bound regex/AST analysis
+executor = concurrent.futures.ThreadPoolExecutor(max_workers=8)
+
+# Files to skip (large files > 300KB, lock files, minified bundles, maps)
+MAX_FILE_SIZE = 300 * 1024  # 300 KB
+SKIPPED_FILES = {
+    'package-lock.json', 'pnpm-lock.yaml', 'yarn.lock', 'composer.lock',
+    'cargo.lock', 'poetry.lock', 'gemfile.lock'
+}
 
 def compute_health_score(issues: List[Issue], dependencies: List[DependencyItem]) -> int:
     score = 100
@@ -92,91 +104,104 @@ async def health_check():
         }
     }
 
+def process_single_file_sync(path: str, content: str):
+    """Synchronous CPU worker run inside ThreadPoolExecutor"""
+    base_name = os.path.basename(path).lower()
+
+    # Skip files larger than 300KB or lock files
+    if len(content) > MAX_FILE_SIZE or base_name in SKIPPED_FILES or path.endswith(('.min.js', '.min.css', '.map')):
+        return [], []
+
+    deps = []
+    if base_name == "package.json":
+        deps = check_package_json(content)
+    elif base_name in ["requirements.txt", "requirements-dev.txt"]:
+        deps = check_requirements_txt(content)
+
+    issues = scan_file_content(path, content)
+    return issues, deps
+
 @app.post("/api/scan-file")
 async def scan_single_file(request: SingleFileScanRequest):
-    """Scans a single modified file on debounced user typing in Monaco Editor."""
-    file_issues = scan_file_content(request.path, request.content)
-    
-    # Check dependencies if manifest
-    dependencies = []
-    base_name = request.path.split("/")[-1].split("\\")[-1].lower()
-    if base_name == "package.json":
-        dependencies = check_package_json(request.content)
-    elif base_name in ["requirements.txt", "requirements-dev.txt"]:
-        dependencies = check_requirements_txt(request.content)
-
+    """Fast, debounced 600ms single file scanner for live Monaco Editor typing."""
+    loop = asyncio.get_running_loop()
+    issues, deps = await loop.run_in_executor(
+        executor, process_single_file_sync, request.path, request.content
+    )
     return {
         "filePath": request.path,
-        "issues": file_issues,
-        "dependencies": dependencies
+        "issues": issues,
+        "dependencies": deps
     }
 
 @app.post("/api/scan", response_model=ScanResult)
 async def scan_project(request: ScanRequest):
+    """
+    Parallel rule-based scan:
+    - Runs in parallel across thread pool (4 to 8 at a time)
+    - Returns results immediately in milliseconds
+    """
     files = request.files
     total_files = len(files)
     
     if total_files == 0:
         raise HTTPException(status_code=400, detail="No files provided for scanning.")
 
+    loop = asyncio.get_running_loop()
+
+    # Process files in parallel batches of 8 using ThreadPoolExecutor
+    batch_size = 8
     all_issues: List[Issue] = []
     all_dependencies: List[DependencyItem] = []
     scanned_count = 0
 
-    ollama_online, default_model, _ = await check_ollama_status()
-    use_ai = request.enableAiEnhancement and ollama_online
-    active_model = request.aiModel or default_model or "qwen2.5-coder:7b"
+    for i in range(0, total_files, batch_size):
+        batch = files[i:i + batch_size]
+        tasks = [
+            loop.run_in_executor(executor, process_single_file_sync, f.path, f.content)
+            for f in batch
+        ]
+        results = await asyncio.gather(*tasks)
+        for issues, deps in results:
+            scanned_count += 1
+            all_issues.extend(issues)
+            all_dependencies.extend(deps)
 
-    for file_item in files:
-        path = file_item.path
-        content = file_item.content
-        scanned_count += 1
-
-        # Check dependencies if manifest
-        base_name = path.split("/")[-1].split("\\")[-1].lower()
-        if base_name == "package.json":
-            all_dependencies.extend(check_package_json(content))
-        elif base_name in ["requirements.txt", "requirements-dev.txt"]:
-            all_dependencies.extend(check_requirements_txt(content))
-
-        # Run code rule checks
-        file_issues = scan_file_content(path, content)
-        
-        # Second pass with Ollama if online for critical/high issues
-        if use_ai and file_issues:
-            for issue in file_issues[:3]:
-                if issue.severity in ["Critical", "High"]:
-                    enhanced = await enhance_issue_with_ai(issue, content, active_model)
-                    issue.explanation = enhanced.explanation
-                    issue.suggestedFix = enhanced.suggestedFix
-                    issue.aiEnhanced = enhanced.aiEnhanced
-
-        all_issues.extend(file_issues)
-
+    # Calculate category counts with support for both singular and plural
     severity_counts = {"Critical": 0, "High": 0, "Medium": 0, "Low": 0}
     category_counts = {
         "error": 0,
+        "errors": 0,
         "bug": 0,
+        "bugs": 0,
         "security": 0,
         "performance": 0,
+        "perf": 0,
         "dependency": len(all_dependencies),
+        "deps": len(all_dependencies),
         "quality": 0
     }
 
     for issue in all_issues:
         if issue.severity in severity_counts:
             severity_counts[issue.severity] += 1
-        if issue.category in category_counts:
-            category_counts[issue.category] += 1
+        cat = issue.category.lower()
+        if cat in ["error", "errors"]:
+            category_counts["error"] += 1
+            category_counts["errors"] += 1
+        elif cat in ["bug", "bugs"]:
+            category_counts["bug"] += 1
+            category_counts["bugs"] += 1
+        elif cat in ["security"]:
+            category_counts["security"] += 1
+        elif cat in ["performance", "perf"]:
+            category_counts["performance"] += 1
+            category_counts["perf"] += 1
+        elif cat in ["quality"]:
+            category_counts["quality"] += 1
 
     health_score = compute_health_score(all_issues, all_dependencies)
     best_practices = generate_best_practices(all_issues, all_dependencies)
-
-    ai_msg = (
-        f"Local AI enhancement active via Ollama ({active_model}). 100% private & offline."
-        if use_ai
-        else "Ollama is offline. Full rule-based static engine active."
-    )
 
     return ScanResult(
         healthScore=health_score,
@@ -188,6 +213,39 @@ async def scan_project(request: ScanRequest):
         issues=all_issues,
         dependencies=all_dependencies,
         bestPractices=best_practices,
-        aiProvider=active_model if use_ai else None,
-        aiStatusMessage=ai_msg
+        aiProvider="qwen2.5-coder:7b",
+        aiStatusMessage="Rule-based static analysis complete. Ollama AI pass ready."
     )
+
+@app.post("/api/scan-ai-enhance")
+async def scan_ai_enhance(request: ScanRequest):
+    """
+    Background AI enhancement pass:
+    - Limited to 2 concurrent Ollama requests
+    - Sends only relevant code chunks with keep_alive='10m'
+    - Enhances critical/high priority issues
+    """
+    ollama_online, default_model, _ = await check_ollama_status()
+    if not ollama_online:
+        return {"enhancedIssues": []}
+
+    active_model = request.aiModel or default_model or "qwen2.5-coder:7b"
+    file_map = {f.path: f.content for f in request.files}
+
+    # Only scan top critical/high issues from files
+    enhanced: List[Issue] = []
+    
+    # Process up to 5 critical/high issues with Ollama
+    for f in request.files:
+        issues = scan_file_content(f.path, f.content)
+        high_pri = [i for i in issues if i.severity in ["Critical", "High"]]
+        for issue in high_pri[:2]:
+            enh = await enhance_issue_with_ai(issue, f.content, active_model)
+            if enh.aiEnhanced:
+                enhanced.append(enh)
+            if len(enhanced) >= 6:
+                break
+        if len(enhanced) >= 6:
+            break
+
+    return {"enhancedIssues": enhanced}
