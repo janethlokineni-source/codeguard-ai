@@ -39,19 +39,7 @@ import { StatusChip } from '@/components/ui/StatusChip';
 import { PageBackground } from '@/components/ui/PageBackground';
 import { CinematicLoginIntro } from '@/components/CinematicLoginIntro';
 
-// Lazy-load Monaco Editor for ultra-fast initial page load
-const MonacoCodeWorkspace = dynamic(
-  () => import('@/components/MonacoCodeWorkspace').then((mod) => mod.MonacoCodeWorkspace),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="h-full flex flex-col items-center justify-center bg-[#0b0f19] text-slate-400 gap-2 font-mono text-xs">
-        <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-        <span>Loading Editor Engine...</span>
-      </div>
-    ),
-  }
-);
+import { MonacoCodeWorkspace } from '@/components/MonacoCodeWorkspace';
 
 const BACKEND_URL = 'http://localhost:8000';
 const MAX_FILE_SIZE = 300 * 1024; // 300 KB

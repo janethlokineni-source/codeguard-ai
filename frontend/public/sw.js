@@ -1,5 +1,5 @@
 // CLYRO Service Worker - High-Performance Offline PWA
-const CACHE_NAME = 'clyro-offline-v3';
+const CACHE_NAME = 'clyro-offline-v4';
 
 // Dynamically resolve base path (for GitHub Pages '/codeguard-ai' vs local '')
 const isGh = self.location.pathname.includes('/codeguard-ai');
@@ -19,6 +19,23 @@ const RAW_PRECACHE = [
   '/monaco/vs/loader.js',
   '/monaco/vs/editor/editor.main.js',
   '/monaco/vs/editor/editor.main.css',
+  '/_next/static/chunks/0-o74znen4827.js',
+  '/_next/static/chunks/0cz1d0mv5g_q7.js',
+  '/_next/static/chunks/0fj6qg-rg09j_.js',
+  '/_next/static/chunks/0s2cptn1mmf6r.js',
+  '/_next/static/chunks/1etfnh3765x-k.js',
+  '/_next/static/chunks/1rk849vtv4dri.js',
+  '/_next/static/chunks/1rs3n8lvzq_f0.js',
+  '/_next/static/chunks/2ubu7lvok1xw0.js',
+  '/_next/static/chunks/2yuytdmc7wux3.js',
+  '/_next/static/chunks/3-9yfy5dqlhyn.js',
+  '/_next/static/chunks/3ewmrodw3hrri.js',
+  '/_next/static/chunks/3lxdeol-xu2hx.js',
+  '/_next/static/chunks/3wg2rllis_osy.js',
+  '/_next/static/chunks/411vdxwco0_ry.js',
+  '/_next/static/chunks/42onvq6nokjl2.js',
+  '/_next/static/chunks/459opgsa218by.css',
+  '/_next/static/chunks/turbopack-17jsoxsw33s63.js',
   '/fonts/144353ea_u-4e0qyriQwlOrhSvowK_l5UcA6zuSYEqOzpPe3HOZJ5eX1WtLaQwmYiSequJ-mFqA.woff2',
   '/fonts/1747ce64_nuFRD-vYSZviVYUb_rj3ij__anPXDTnCjmHKM4nYO7KN_qiTXtXA-W2r.woff2',
   '/fonts/27e1b5c3_tDbv2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKwBNntkaToggR7BYRbKPx3cwhsk.woff2',
