@@ -24,7 +24,7 @@ class DependencyItem(BaseModel):
     package: str
     currentVersion: str
     latestVersion: str
-    status: Literal["Safe", "Outdated", "Deprecated", "Known-vulnerable"]
+    status: Literal["Safe", "Outdated", "Deprecated", "Known-vulnerable", "Unknown (offline)"]
     ecosystem: str
     upgradeCommand: str
     vulnerabilityDetails: Optional[str] = None

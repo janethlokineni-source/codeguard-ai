@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { ServiceWorkerRegister } from '@/components/ServiceWorkerRegister';
 
 export const metadata: Metadata = {
   title: 'CLYRO · Private Code Review',
@@ -7,6 +8,7 @@ export const metadata: Metadata = {
   icons: {
     icon: '/favicon.ico',
   },
+  manifest: '/manifest.json',
 };
 
 export default function RootLayout({
@@ -17,6 +19,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className="bg-[#120b1a] text-[#f6e7dc] antialiased min-h-screen selection:bg-[#c9777f]/40 selection:text-[#f6e7dc]">
+        <ServiceWorkerRegister />
         {children}
       </body>
     </html>

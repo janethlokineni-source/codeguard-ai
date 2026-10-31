@@ -1,0 +1,89 @@
+{
+  "visual_comparison": {
+    "login_desktop.png": {
+      "passed": false,
+      "pct_diff": 42.40787037037037,
+      "msg": "Diff: 42.41% (Tolerance: 3.5%)"
+    },
+    "login_mobile.png": {
+      "passed": false,
+      "pct_diff": 11.008324219224694,
+      "msg": "Diff: 11.01% (Tolerance: 3.5%)"
+    },
+    "home_upload_desktop.png": {
+      "passed": false,
+      "pct_diff": 54.383796296296296,
+      "msg": "Diff: 54.38% (Tolerance: 3.5%)"
+    },
+    "home_upload_mobile.png": {
+      "passed": false,
+      "pct_diff": 26.958378489071738,
+      "msg": "Diff: 26.96% (Tolerance: 3.5%)"
+    },
+    "admin_users_desktop.png": {
+      "passed": false,
+      "pct_diff": 15.056095679012346,
+      "msg": "Diff: 15.06% (Tolerance: 10.0%)"
+    },
+    "admin_users_mobile.png": {
+      "passed": false,
+      "pct_diff": 13.443252135274367,
+      "msg": "Diff: 13.44% (Tolerance: 10.0%)"
+    },
+    "admin_audit_desktop.png": {
+      "passed": false,
+      "pct_diff": 15.057716049382716,
+      "msg": "Diff: 15.06% (Tolerance: 10.0%)"
+    },
+    "admin_audit_mobile.png": {
+      "passed": false,
+      "pct_diff": 13.534897023873027,
+      "msg": "Diff: 13.53% (Tolerance: 10.0%)"
+    },
+    "admin_system_desktop.png": {
+      "passed": false,
+      "pct_diff": 27.94382716049383,
+      "msg": "Diff: 27.94% (Tolerance: 10.0%)"
+    },
+    "admin_system_mobile.png": {
+      "passed": false,
+      "pct_diff": 15.268568730577769,
+      "msg": "Diff: 15.27% (Tolerance: 10.0%)"
+    },
+    "design_system_desktop.png": {
+      "passed": true,
+      "pct_diff": 1.8976435563629026,
+      "msg": "Diff: 1.90% (Tolerance: 3.5%)"
+    },
+    "design_system_mobile.png": {
+      "passed": false,
+      "pct_diff": 17.018629270639995,
+      "msg": "Diff: 17.02% (Tolerance: 3.5%)"
+    },
+    "error_404_desktop.png": {
+      "passed": true,
+      "pct_diff": 0.7391975308641975,
+      "msg": "Diff: 0.74% (Tolerance: 3.5%)"
+    },
+    "error_404_mobile.png": {
+      "passed": false,
+      "pct_diff": 6.89117754283631,
+      "msg": "Diff: 6.89% (Tolerance: 3.5%)"
+    }
+  },
+  "offline_tests": {
+    "page_loads_offline": true,
+    "github_button_disabled_offline": true,
+    "github_tooltip_matches": true,
+    "offline_status_chip_visible": true,
+    "offline_scan_completed": true
+  },
+  "online_tests": {
+    "github_button_enabled_online": true
+  },
+  "network_audit": {
+    "external_requests": [],
+    "failed_requests": [],
+    "console_errors": []
+  }
+}

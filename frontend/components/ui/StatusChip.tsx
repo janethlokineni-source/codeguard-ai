@@ -5,7 +5,7 @@ import { Shield, Sparkles, Database } from 'lucide-react';
 
 interface StatusChipProps {
   label?: string;
-  variant?: 'session' | 'ai' | 'warning' | 'clean' | 'db';
+  variant?: 'session' | 'ai' | 'warning' | 'clean' | 'db' | 'offline';
   className?: string;
   title?: string;
 }
@@ -16,6 +16,29 @@ export const StatusChip: React.FC<StatusChipProps> = ({
   className = '',
   title = '',
 }) => {
+  if (variant === 'offline') {
+    return (
+      <div
+        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-semibold tracking-wider uppercase backdrop-blur-md border ${className}`}
+        style={{
+          background: 'rgba(26, 17, 37, 0.88)',
+          borderColor: 'rgba(240, 201, 138, 0.4)',
+          color: '#f0c98a',
+        }}
+        title={title || 'Operating in 100% offline mode. Zero cloud dependency.'}
+      >
+        <span
+          className="w-1.5 h-1.5 rounded-full"
+          style={{
+            background: '#f0c98a',
+            boxShadow: '0 0 8px #f0c98a',
+          }}
+        />
+        <span>{label || 'OFFLINE'}</span>
+      </div>
+    );
+  }
+
   if (variant === 'db') {
     return (
       <div

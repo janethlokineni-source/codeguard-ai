@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DependencyItem } from '@/types/scanner';
 import { Copy, Check, ShieldCheck, Wand2, Package } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
@@ -19,6 +19,21 @@ export const DependenciesTab: React.FC<DependenciesTabProps> = ({
 }) => {
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [filter, setFilter] = useState<'all' | 'vulnerable' | 'outdated'>('all');
+  const [isOnline, setIsOnline] = useState<boolean>(true);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIsOnline(navigator.onLine);
+      const on = () => setIsOnline(true);
+      const off = () => setIsOnline(false);
+      window.addEventListener('online', on);
+      window.addEventListener('offline', off);
+      return () => {
+        window.removeEventListener('online', on);
+        window.removeEventListener('offline', off);
+      };
+    }
+  }, []);
 
   const vulnerableOrOutdated = dependencies.filter(
     (d) => d.status === 'Known-vulnerable' || d.status === 'Deprecated' || d.status === 'Outdated'
@@ -149,6 +164,8 @@ export const DependenciesTab: React.FC<DependenciesTabProps> = ({
                           ? 'High'
                           : dep.status === 'Outdated'
                           ? 'Medium'
+                          : dep.status === 'Unknown (offline)'
+                          ? 'Default'
                           : 'Safe'
                       }
                     >
@@ -194,6 +211,12 @@ export const DependenciesTab: React.FC<DependenciesTabProps> = ({
           </tbody>
         </table>
       </Card>
+      {!isOnline && (
+        <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[rgba(26,17,37,0.7)] border border-[rgba(201,119,127,0.2)] text-[11px] text-[#b8a5b8]">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#f0c98a]" />
+          <span>Running offline. Third-party packages evaluated using bundled local security snapshot database.</span>
+        </div>
+      )}
     </div>
   );
 };

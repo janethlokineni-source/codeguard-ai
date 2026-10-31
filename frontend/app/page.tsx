@@ -125,6 +125,21 @@ export default function Home() {
   const [confirmLeaveOpen, setConfirmLeaveOpen] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [showIntro, setShowIntro] = useState<boolean>(true);
+  const [isOnline, setIsOnline] = useState<boolean>(true);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIsOnline(navigator.onLine);
+      const on = () => setIsOnline(true);
+      const off = () => setIsOnline(false);
+      window.addEventListener('online', on);
+      window.addEventListener('offline', off);
+      return () => {
+        window.removeEventListener('online', on);
+        window.removeEventListener('offline', off);
+      };
+    }
+  }, []);
 
   const folderInputRef = useRef<HTMLInputElement>(null);
   const filesInputRef = useRef<HTMLInputElement>(null);
@@ -769,6 +784,7 @@ export default function Home() {
           <StatusChip variant="db" label="POSTGRESQL" title="PostgreSQL Database Integration Layer Active" />
           <StatusChip variant="ai" label="OLLAMA READY" />
           <StatusChip label="PRIVATE SESSION" />
+          {!isOnline && <StatusChip variant="offline" label="OFFLINE" title="Operating in offline mode" />}
 
           {phase === 'workspace' && (
             <>

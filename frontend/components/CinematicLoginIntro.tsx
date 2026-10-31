@@ -51,6 +51,21 @@ export const CinematicLoginIntro: React.FC<CinematicLoginIntroProps> = ({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [isOnline, setIsOnline] = useState<boolean>(true);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIsOnline(navigator.onLine);
+      const on = () => setIsOnline(true);
+      const off = () => setIsOnline(false);
+      window.addEventListener('online', on);
+      window.addEventListener('offline', off);
+      return () => {
+        window.removeEventListener('online', on);
+        window.removeEventListener('offline', off);
+      };
+    }
+  }, []);
   const [rememberMe, setRememberMe] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
@@ -102,15 +117,17 @@ export const CinematicLoginIntro: React.FC<CinematicLoginIntroProps> = ({
     if (typeof window !== 'undefined') {
       localStorage.setItem('clyro_auth', 'true');
     }
-    // Attempt to persist to PostgreSQL backend
-    fetch('http://localhost:8000/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email: email || 'developer@clyro.local',
-        password: password || 'session_token',
-      }),
-    }).catch(() => {});
+    // Attempt to persist to PostgreSQL backend when online
+    if (typeof window !== 'undefined' && navigator.onLine) {
+      fetch('http://localhost:8000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: email || 'developer@clyro.local',
+          password: password || 'session_token',
+        }),
+      }).catch(() => {});
+    }
 
     setTimeout(() => {
       setIsExiting(true);
@@ -437,8 +454,18 @@ export const CinematicLoginIntro: React.FC<CinematicLoginIntroProps> = ({
           <div className="grid grid-cols-2 gap-2.5">
             <button
               type="button"
+              disabled={!isOnline}
               onClick={() => handleAuthComplete()}
-              className="h-10 rounded-xl bg-[#0d0414] hover:bg-[#1d0e2b] border border-[rgba(201,119,127,0.38)] hover:border-[#c9777f] text-xs font-semibold text-white flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm"
+              className={`h-10 rounded-xl bg-[#0d0414] border text-xs font-semibold flex items-center justify-center gap-2 transition-all shadow-sm ${
+                !isOnline
+                  ? 'opacity-40 cursor-not-allowed border-[rgba(201,119,127,0.2)] text-[#7e6980]'
+                  : 'hover:bg-[#1d0e2b] border-[rgba(201,119,127,0.38)] hover:border-[#c9777f] text-white cursor-pointer'
+              }`}
+              title={
+                !isOnline
+                  ? 'Needs internet. Use email and password or Continue as guest.'
+                  : 'Continue with GitHub'
+              }
             >
               <svg className="w-3.5 h-3.5 text-[#f0c98a] fill-current" viewBox="0 0 24 24">
                 <path

@@ -22,7 +22,7 @@ export interface DependencyItem {
   package: string;
   currentVersion: string;
   latestVersion: string;
-  status: 'Safe' | 'Outdated' | 'Deprecated' | 'Known-vulnerable';
+  status: 'Safe' | 'Outdated' | 'Deprecated' | 'Known-vulnerable' | 'Unknown (offline)';
   ecosystem: string;
   upgradeCommand: string;
   vulnerabilityDetails?: string | null;

@@ -79,6 +79,21 @@ export default function AdminPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(false);
+  const [isOnline, setIsOnline] = useState<boolean>(true);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIsOnline(navigator.onLine);
+      const on = () => setIsOnline(true);
+      const off = () => setIsOnline(false);
+      window.addEventListener('online', on);
+      window.addEventListener('offline', off);
+      return () => {
+        window.removeEventListener('online', on);
+        window.removeEventListener('offline', off);
+      };
+    }
+  }, []);
 
   // Filters
   const [userSearch, setUserSearch] = useState('');
@@ -244,6 +259,7 @@ export default function AdminPage() {
             label="POSTGRESQL"
             title={`Database connected: ${stats?.database?.database || 'major_projects_db'}`}
           />
+          {!isOnline && <StatusChip variant="offline" label="OFFLINE" title="Operating in offline mode" />}
 
           <button
             type="button"

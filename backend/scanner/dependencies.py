@@ -1,7 +1,25 @@
+import os
 import json
 import re
+import socket
 from typing import List
 from .models import DependencyItem
+
+# Load offline database snapshot
+OFFLINE_DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "offline_packages.json")
+OFFLINE_NPM_PACKAGES = {}
+OFFLINE_PY_PACKAGES = {}
+
+def is_system_online() -> bool:
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(0.3)
+        s.connect(("8.8.8.8", 53))
+        s.close()
+        return True
+    except Exception:
+        return False
+
 
 KNOWN_NPM_PACKAGES = {
     "lodash": {
@@ -87,6 +105,17 @@ KNOWN_PY_PACKAGES = {
     }
 }
 
+if os.path.exists(OFFLINE_DB_PATH):
+    try:
+        with open(OFFLINE_DB_PATH, "r", encoding="utf-8") as f:
+            _offline_data = json.load(f)
+            if "npm" in _offline_data and isinstance(_offline_data["npm"], dict):
+                KNOWN_NPM_PACKAGES.update(_offline_data["npm"])
+            if "pypi" in _offline_data and isinstance(_offline_data["pypi"], dict):
+                KNOWN_PY_PACKAGES.update(_offline_data["pypi"])
+    except Exception:
+        pass
+
 def clean_version(v: str) -> str:
     return re.sub(r"""^[~^>=<\s]+""", "", v).strip()
 
@@ -147,14 +176,15 @@ def check_package_json(content: str) -> List[DependencyItem]:
                 vulnerabilityDetails=vuln
             ))
         else:
+            online = is_system_online()
             items.append(DependencyItem(
                 package=pkg,
                 currentVersion=ver_str,
-                latestVersion="latest",
-                status="Safe",
+                latestVersion="latest" if online else "Unknown (offline)",
+                status="Safe" if online else "Unknown (offline)",
                 ecosystem="npm",
                 upgradeCommand=f"npm update {pkg}",
-                vulnerabilityDetails=None
+                vulnerabilityDetails=None if online else "Package not found in offline snapshot database."
             ))
     return items
 
@@ -189,14 +219,15 @@ def check_requirements_txt(content: str) -> List[DependencyItem]:
                     vulnerabilityDetails=vuln
                 ))
             else:
+                online = is_system_online()
                 items.append(DependencyItem(
                     package=pkg,
                     currentVersion=current,
-                    latestVersion="latest",
-                    status="Safe",
+                    latestVersion="latest" if online else "Unknown (offline)",
+                    status="Safe" if online else "Unknown (offline)",
                     ecosystem="pypi",
                     upgradeCommand=f"pip install --upgrade {pkg}",
-                    vulnerabilityDetails=None
+                    vulnerabilityDetails=None if online else "Package not found in offline snapshot database."
                 ))
     return items
 

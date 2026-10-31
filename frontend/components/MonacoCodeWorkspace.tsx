@@ -1,9 +1,14 @@
 'use client';
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import Editor, { Monaco } from '@monaco-editor/react';
+import Editor, { Monaco, loader } from '@monaco-editor/react';
 import { Issue } from '@/types/scanner';
 import { Save, Sparkles, FileCode, CheckCircle2 } from 'lucide-react';
+
+// Configure Monaco to load 100% locally from /monaco/vs with zero internet/CDN calls
+if (typeof window !== 'undefined') {
+  loader.config({ paths: { vs: '/monaco/vs' } });
+}
 
 interface MonacoCodeWorkspaceProps {
   filePath: string;

@@ -1,0 +1,124 @@
+{
+  "updated_at": "2026-10-31T06:00:00Z",
+  "source": "CLYRO Offline Security Snapshot",
+  "npm": {
+    "lodash": {
+      "latest": "4.17.21",
+      "vuln_below": "4.17.21",
+      "vuln_info": "Prototype Pollution and Command Injection (CVE-2021-23337, CVE-2020-8203)",
+      "deprecated": false
+    },
+    "axios": {
+      "latest": "1.7.9",
+      "vuln_below": "1.6.0",
+      "vuln_info": "Server-Side Request Forgery & ReDoS in query serialization (CVE-2023-45857)",
+      "deprecated": false
+    },
+    "express": {
+      "latest": "4.21.1",
+      "vuln_below": "4.19.2",
+      "vuln_info": "Open Redirect vulnerability via malformed URLs (CVE-2024-29041)",
+      "deprecated": false
+    },
+    "jsonwebtoken": {
+      "latest": "9.0.2",
+      "vuln_below": "9.0.0",
+      "vuln_info": "Insecure key verification leading to Remote Code Execution (CVE-2022-23529)",
+      "deprecated": false
+    },
+    "moment": {
+      "latest": "2.30.1",
+      "vuln_below": "2.29.4",
+      "vuln_info": "ReDoS vulnerability (CVE-2022-31129)",
+      "deprecated": true
+    },
+    "request": {
+      "latest": "2.88.2",
+      "vuln_below": "99.0.0",
+      "vuln_info": "Package is officially deprecated, unmaintained, and vulnerable to SSRF.",
+      "deprecated": true
+    },
+    "react": {
+      "latest": "19.0.0",
+      "vuln_below": "16.14.0",
+      "vuln_info": "Cross-Site Scripting vulnerabilities in legacy React DOM (CVE-2018-6341)",
+      "deprecated": false
+    },
+    "next": {
+      "latest": "15.0.3",
+      "vuln_below": "14.1.1",
+      "vuln_info": "Server Actions SSRF and Cache Poisoning vulnerability (CVE-2024-34351)",
+      "deprecated": false
+    },
+    "vue": {
+      "latest": "3.5.12",
+      "vuln_below": "3.2.0",
+      "vuln_info": "ReDoS vulnerability in compiler DOM element parsing",
+      "deprecated": false
+    },
+    "fastify": {
+      "latest": "5.1.0",
+      "vuln_below": "4.26.0",
+      "vuln_info": "Denial of Service in body parsing and header validation",
+      "deprecated": false
+    },
+    "mongoose": {
+      "latest": "8.8.1",
+      "vuln_below": "6.12.0",
+      "vuln_info": "Prototype pollution via schema index overrides",
+      "deprecated": false
+    }
+  },
+  "pypi": {
+    "requests": {
+      "latest": "2.32.3",
+      "vuln_below": "2.31.0",
+      "vuln_info": "Leaking Proxy-Authorization headers on redirects (CVE-2023-32681)"
+    },
+    "flask": {
+      "latest": "3.0.3",
+      "vuln_below": "2.2.5",
+      "vuln_info": "Unexpected session cookie disclosure and DoS risk (CVE-2023-30861)"
+    },
+    "urllib3": {
+      "latest": "2.2.3",
+      "vuln_below": "2.0.7",
+      "vuln_info": "Sensitive cookie leak on cross-host redirects (CVE-2023-45803)"
+    },
+    "django": {
+      "latest": "5.1.2",
+      "vuln_below": "4.2.16",
+      "vuln_info": "Denial of Service in URL validation and auth bypass (CVE-2024-45230)"
+    },
+    "pyyaml": {
+      "latest": "6.0.2",
+      "vuln_below": "5.4",
+      "vuln_info": "Arbitrary code execution via yaml.load() (CVE-2020-14343)"
+    },
+    "cryptography": {
+      "latest": "43.0.1",
+      "vuln_below": "41.0.6",
+      "vuln_info": "Memory corruption in PKCS7 decryption (CVE-2023-49083)"
+    },
+    "fastapi": {
+      "latest": "0.115.4",
+      "vuln_below": "0.100.0",
+      "vuln_info": "Improper header parsing causing ReDoS"
+    },
+    "pydantic": {
+      "latest": "2.9.2",
+      "vuln_below": "1.10.13",
+      "vuln_info": "Regex Denial of Service in email validation"
+    },
+    "jinja2": {
+      "latest": "3.1.4",
+      "vuln_below": "3.1.3",
+      "vuln_info": "Server-Side Template Injection via xmlattr filter (CVE-2024-22195)"
+    },
+    "werkzeug": {
+      "latest": "3.0.6",
+      "vuln_below": "3.0.3",
+      "vuln_info": "Remote Code Execution in debugger console (CVE-2024-34069)"
+    }
+  }
+}
