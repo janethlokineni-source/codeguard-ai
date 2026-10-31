@@ -52,7 +52,7 @@ export const CinematicLoginIntro: React.FC<CinematicLoginIntroProps> = ({
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isOnline, setIsOnline] = useState<boolean>(true);
-  const [iconSrc, setIconSrc] = useState('/clyro-icon.png');
+  const [iconSrc, setIconSrc] = useState((process.env.NEXT_PUBLIC_BASE_PATH || '') + '/clyro-icon.png');
 
   useEffect(() => {
     if (typeof window !== 'undefined') {

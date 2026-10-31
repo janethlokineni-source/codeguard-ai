@@ -5,6 +5,10 @@ const isGithubPages = process.env.GITHUB_PAGES === "true";
 const nextConfig: NextConfig = {
   output: isGithubPages ? "export" : undefined,
   basePath: isGithubPages ? "/codeguard-ai" : "",
+  assetPrefix: isGithubPages ? "/codeguard-ai" : undefined,
+  env: {
+    NEXT_PUBLIC_BASE_PATH: isGithubPages ? "/codeguard-ai" : "",
+  },
   images: {
     unoptimized: true,
   },
