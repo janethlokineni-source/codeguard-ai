@@ -16,6 +16,14 @@ export const Logo: React.FC<LogoProps> = ({
   className = '',
   href = '/',
 }) => {
+  const [iconSrc, setIconSrc] = React.useState('/clyro-icon.png');
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.pathname.startsWith('/codeguard-ai')) {
+      setIconSrc('/codeguard-ai/clyro-icon.png');
+    }
+  }, []);
+
   const iconSizes = {
     sm: 'w-7 h-7',
     md: 'w-9 h-9',
@@ -44,9 +52,9 @@ export const Logo: React.FC<LogoProps> = ({
         className={`${iconSizes[size]} rounded-xl flex items-center justify-center relative overflow-hidden transition-transform duration-300 group-hover:scale-105 border border-[rgba(201,119,127,0.35)] shadow-[0_2px_16px_rgba(138,99,181,0.35)] bg-[#0f0816] shrink-0`}
       >
         <img
-          src="/clyro-icon.png"
+          src={iconSrc}
           alt="CLYRO Emblem"
-          className="w-full h-full object-cover scale-110 drop-shadow-[0_0_8px_rgba(201,119,127,0.5)]"
+          className="w-full h-full object-cover scale-105 drop-shadow-[0_0_8px_rgba(201,119,127,0.5)]"
         />
       </div>
 

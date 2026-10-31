@@ -52,9 +52,13 @@ export const CinematicLoginIntro: React.FC<CinematicLoginIntroProps> = ({
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isOnline, setIsOnline] = useState<boolean>(true);
+  const [iconSrc, setIconSrc] = useState('/clyro-icon.png');
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      if (window.location.pathname.startsWith('/codeguard-ai')) {
+        setIconSrc('/codeguard-ai/clyro-icon.png');
+      }
       setIsOnline(navigator.onLine);
       const on = () => setIsOnline(true);
       const off = () => setIsOnline(false);
@@ -177,7 +181,7 @@ export const CinematicLoginIntro: React.FC<CinematicLoginIntroProps> = ({
           {/* 3D Chrome Emblem */}
           <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-3xl border border-[rgba(201,119,127,0.45)] bg-[#0d0516] flex items-center justify-center p-3 shadow-[0_0_50px_rgba(201,119,127,0.5)] overflow-hidden mb-6">
             <img
-              src="/clyro-icon.png"
+              src={iconSrc}
               alt="CLYRO Emblem"
               className="w-full h-full object-contain filter drop-shadow-[0_0_15px_rgba(201,119,127,0.8)]"
             />
