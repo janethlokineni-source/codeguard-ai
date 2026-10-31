@@ -2,73 +2,73 @@
   "visual_comparison": {
     "login_desktop.png": {
       "passed": false,
-      "pct_diff": 42.40787037037037,
-      "msg": "Diff: 42.41% (Tolerance: 3.5%)"
+      "pct_diff": 51.26018518518518,
+      "msg": "Diff: 51.26% (Tolerance: 3.5%)"
     },
     "login_mobile.png": {
       "passed": false,
-      "pct_diff": 11.008324219224694,
-      "msg": "Diff: 11.01% (Tolerance: 3.5%)"
+      "pct_diff": 52.380908980435045,
+      "msg": "Diff: 52.38% (Tolerance: 3.5%)"
     },
     "home_upload_desktop.png": {
       "passed": false,
-      "pct_diff": 54.383796296296296,
+      "pct_diff": 54.37908950617284,
       "msg": "Diff: 54.38% (Tolerance: 3.5%)"
     },
     "home_upload_mobile.png": {
       "passed": false,
-      "pct_diff": 26.958378489071738,
-      "msg": "Diff: 26.96% (Tolerance: 3.5%)"
+      "pct_diff": 26.94975000402663,
+      "msg": "Diff: 26.95% (Tolerance: 3.5%)"
     },
     "admin_users_desktop.png": {
       "passed": false,
-      "pct_diff": 15.056095679012346,
+      "pct_diff": 15.059027777777779,
       "msg": "Diff: 15.06% (Tolerance: 10.0%)"
     },
     "admin_users_mobile.png": {
       "passed": false,
-      "pct_diff": 13.443252135274367,
+      "pct_diff": 13.442257828234563,
       "msg": "Diff: 13.44% (Tolerance: 10.0%)"
     },
     "admin_audit_desktop.png": {
       "passed": false,
-      "pct_diff": 15.057716049382716,
+      "pct_diff": 15.059490740740742,
       "msg": "Diff: 15.06% (Tolerance: 10.0%)"
     },
     "admin_audit_mobile.png": {
       "passed": false,
-      "pct_diff": 13.534897023873027,
+      "pct_diff": 13.527746692120335,
       "msg": "Diff: 13.53% (Tolerance: 10.0%)"
     },
     "admin_system_desktop.png": {
       "passed": false,
-      "pct_diff": 27.94382716049383,
-      "msg": "Diff: 27.94% (Tolerance: 10.0%)"
+      "pct_diff": 27.95262345679012,
+      "msg": "Diff: 27.95% (Tolerance: 10.0%)"
     },
     "admin_system_mobile.png": {
       "passed": false,
-      "pct_diff": 15.268568730577769,
+      "pct_diff": 15.26641228131902,
       "msg": "Diff: 15.27% (Tolerance: 10.0%)"
     },
     "design_system_desktop.png": {
       "passed": true,
-      "pct_diff": 1.8976435563629026,
-      "msg": "Diff: 1.90% (Tolerance: 3.5%)"
+      "pct_diff": 1.9248284387930163,
+      "msg": "Diff: 1.92% (Tolerance: 3.5%)"
     },
     "design_system_mobile.png": {
       "passed": false,
-      "pct_diff": 17.018629270639995,
-      "msg": "Diff: 17.02% (Tolerance: 3.5%)"
+      "pct_diff": 17.01312985495291,
+      "msg": "Diff: 17.01% (Tolerance: 3.5%)"
     },
     "error_404_desktop.png": {
       "passed": true,
-      "pct_diff": 0.7391975308641975,
-      "msg": "Diff: 0.74% (Tolerance: 3.5%)"
+      "pct_diff": 0.7594135802469135,
+      "msg": "Diff: 0.76% (Tolerance: 3.5%)"
     },
     "error_404_mobile.png": {
       "passed": false,
-      "pct_diff": 6.89117754283631,
-      "msg": "Diff: 6.89% (Tolerance: 3.5%)"
+      "pct_diff": 6.971077895248512,
+      "msg": "Diff: 6.97% (Tolerance: 3.5%)"
     }
   },
   "offline_tests": {
