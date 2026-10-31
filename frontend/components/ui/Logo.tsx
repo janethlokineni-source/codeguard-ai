@@ -66,7 +66,7 @@ export const Logo: React.FC<LogoProps> = ({
           CLYRO
         </span>
         {showTagline && (
-          <span className={`${taglineSizes[size]} uppercase font-semibold text-[#b8a5b8] mt-1`}>
+          <span className={`${taglineSizes[size]} uppercase font-semibold text-[#b8a5b8] mt-1 hidden sm:block`}>
             PRIVATE CODE REVIEW
           </span>
         )}

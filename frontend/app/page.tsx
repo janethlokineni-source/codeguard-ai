@@ -120,6 +120,8 @@ export default function Home() {
 
   // Active top tab: 'editor' | 'dependencies' | 'practices'
   const [activeTab, setActiveTab] = useState<'editor' | 'dependencies' | 'practices'>('editor');
+  // Mobile sub-pane view for screens < lg: 'files' | 'editor' | 'issues'
+  const [mobilePane, setMobilePane] = useState<'files' | 'editor' | 'issues'>('issues');
 
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [confirmLeaveOpen, setConfirmLeaveOpen] = useState(false);
@@ -785,44 +787,49 @@ export default function Home() {
       />
 
       {/* TOP NAVIGATION */}
-      <header className="h-16 border-b border-[rgba(201,119,127,0.18)] bg-[#120b1a]/80 backdrop-blur-xl sticky top-0 z-40 px-6 flex items-center justify-between relative">
+      <header className="h-16 border-b border-[rgba(201,119,127,0.18)] bg-[#120b1a]/80 backdrop-blur-xl sticky top-0 z-40 px-3 sm:px-6 flex items-center justify-between relative">
         <button
           onClick={handleLogoClick}
-          className="flex items-center gap-2.5 hover:opacity-90 transition-opacity cursor-pointer group text-left"
+          className="flex items-center gap-2 hover:opacity-90 transition-opacity cursor-pointer group text-left shrink-0"
           title="Return to Home"
         >
           <Logo size="md" />
         </button>
 
-        <div className="flex items-center gap-3">
-          <StatusChip variant="db" label="POSTGRESQL" title="PostgreSQL Database Integration Layer Active" />
-          <StatusChip variant="ai" label="OLLAMA READY" />
-          <StatusChip label="PRIVATE SESSION" />
+        <div className="flex items-center gap-1.5 sm:gap-3 overflow-x-auto no-scrollbar py-1">
+          <div className="hidden lg:flex items-center gap-2">
+            <StatusChip variant="db" label="POSTGRESQL" title="PostgreSQL Database Integration Layer Active" />
+            <StatusChip variant="ai" label="OLLAMA READY" />
+            <StatusChip label="PRIVATE SESSION" />
+          </div>
           {!isOnline && <StatusChip variant="offline" label="OFFLINE" title="Operating in offline mode" />}
 
           {phase === 'workspace' && (
             <>
               <button
                 onClick={downloadFixedZip}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#190f24] hover:bg-[#231533] text-[#f6e7dc] text-xs font-medium border border-[rgba(201,119,127,0.25)] transition-all cursor-pointer shadow-sm"
+                className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-[#190f24] hover:bg-[#231533] text-[#f6e7dc] text-xs font-medium border border-[rgba(201,119,127,0.25)] transition-all cursor-pointer shadow-sm shrink-0"
+                title="Download Fixed Project (.zip)"
               >
                 <Download className="w-3.5 h-3.5 text-[#f0c98a]" />
-                <span>Export (.zip)</span>
+                <span className="hidden sm:inline">Export (.zip)</span>
+                <span className="sm:hidden">Zip</span>
               </button>
 
               <button
                 onClick={handleLogoClick}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#190f24] hover:bg-[#231533] text-[#b8a5b8] hover:text-[#f6e7dc] text-xs font-medium border border-[rgba(201,119,127,0.25)] transition-all cursor-pointer shadow-sm"
+                className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-[#190f24] hover:bg-[#231533] text-[#b8a5b8] hover:text-[#f6e7dc] text-xs font-medium border border-[rgba(201,119,127,0.25)] transition-all cursor-pointer shadow-sm shrink-0"
+                title="Start a new scan"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
-                <span>New Scan</span>
+                <span className="hidden sm:inline">New Scan</span>
               </button>
             </>
           )}
 
           <Link
             href="/admin"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#20102e] hover:bg-[#2d1840] text-[#f0c98a] hover:text-[#fff5e0] text-xs font-semibold border border-[rgba(240,201,138,0.35)] transition-all cursor-pointer shadow-sm group"
+            className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-[#20102e] hover:bg-[#2d1840] text-[#f0c98a] hover:text-[#fff5e0] text-xs font-semibold border border-[rgba(240,201,138,0.35)] transition-all cursor-pointer shadow-sm group shrink-0"
             title="Open Security Administration and Audit Trail"
           >
             <Shield className="w-3.5 h-3.5 text-[#f0c98a] group-hover:scale-110 transition-transform" />
@@ -830,7 +837,7 @@ export default function Home() {
           </Link>
           <button
             onClick={() => setShowIntro(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#190f24] hover:bg-[#231533] text-[#f6e7dc] text-xs font-medium border border-[rgba(201,119,127,0.25)] transition-all cursor-pointer shadow-sm"
+            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-[#190f24] hover:bg-[#231533] text-[#f6e7dc] text-xs font-medium border border-[rgba(201,119,127,0.25)] transition-all cursor-pointer shadow-sm shrink-0"
             title="Sign in / Account Session"
           >
             <span className="w-2 h-2 rounded-full bg-[#f0c98a]"></span>
@@ -864,34 +871,34 @@ export default function Home() {
 
       {/* 1. MINIMAL CLASSIC HOME SCREEN */}
       {phase === 'upload' && (
-        <main className="flex-1 flex flex-col items-center justify-center p-6 text-center max-w-3xl mx-auto my-auto relative z-10">
-          <div className="w-14 h-14 rounded-2xl bg-[rgba(201,119,127,0.12)] border border-[rgba(201,119,127,0.28)] text-[#c9777f] flex items-center justify-center mb-6 shadow-[0_0_25px_rgba(201,119,127,0.15)]">
-            <Shield className="w-7 h-7" />
+        <main className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 text-center max-w-3xl mx-auto my-auto relative z-10 w-full">
+          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-[rgba(201,119,127,0.12)] border border-[rgba(201,119,127,0.28)] text-[#c9777f] flex items-center justify-center mb-4 sm:mb-6 shadow-[0_0_25px_rgba(201,119,127,0.15)]">
+            <Shield className="w-6 h-6 sm:w-7 sm:h-7" />
           </div>
 
-          <h1 className="font-serif-heading text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-[#f6e7dc] leading-tight">
+          <h1 className="font-serif-heading text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-[#f6e7dc] leading-tight px-2">
             Scan before you merge.
           </h1>
-          <p className="mt-4 text-base sm:text-lg text-[#b8a5b8] font-light max-w-xl leading-relaxed">
+          <p className="mt-3 sm:mt-4 text-sm sm:text-lg text-[#b8a5b8] font-light max-w-xl leading-relaxed px-3">
             A clearer view before the merge. Local-first automated code inspection, vulnerability detection, and instant line fixes.
           </p>
 
           <div
             onClick={handlePickFolder}
-            className="mt-10 w-full max-w-lg p-10 rounded-3xl border-2 border-dashed border-[rgba(201,119,127,0.3)] bg-[#190f24]/70 hover:border-[#c9777f] hover:bg-[#190f24]/90 hover:shadow-[0_0_35px_rgba(201,119,127,0.2)] transition-all duration-300 flex flex-col items-center justify-center cursor-pointer group backdrop-blur-md"
+            className="mt-6 sm:mt-10 w-full max-w-lg p-6 sm:p-10 rounded-3xl border-2 border-dashed border-[rgba(201,119,127,0.3)] bg-[#190f24]/70 hover:border-[#c9777f] hover:bg-[#190f24]/90 hover:shadow-[0_0_35px_rgba(201,119,127,0.2)] transition-all duration-300 flex flex-col items-center justify-center cursor-pointer group backdrop-blur-md"
           >
-            <div className="w-14 h-14 rounded-2xl bg-[rgba(201,119,127,0.15)] border border-[rgba(201,119,127,0.25)] text-[#f0c98a] flex items-center justify-center group-hover:scale-105 group-hover:text-[#c9777f] transition-all">
-              <FolderPlus className="w-7 h-7" />
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-[rgba(201,119,127,0.15)] border border-[rgba(201,119,127,0.25)] text-[#f0c98a] flex items-center justify-center group-hover:scale-105 group-hover:text-[#c9777f] transition-all">
+              <FolderPlus className="w-6 h-6 sm:w-7 sm:h-7" />
             </div>
 
-            <span className="mt-5 text-lg font-semibold text-[#f6e7dc] group-hover:text-white transition-colors">
+            <span className="mt-4 sm:mt-5 text-base sm:text-lg font-semibold text-[#f6e7dc] group-hover:text-white transition-colors">
               + Add Folder
             </span>
             <p className="text-xs text-[#b8a5b8] mt-1.5 font-sans">
               Select project directory or drag and drop files here
             </p>
 
-            <div className="mt-6 flex items-center gap-3">
+            <div className="mt-5 sm:mt-6 flex items-center gap-3">
               <span className="text-xs uppercase tracking-wider text-[var(--text-muted)] font-mono">or</span>
               <button
                 type="button"
@@ -913,8 +920,8 @@ export default function Home() {
             </p>
           )}
 
-          <div className="mt-14 flex items-center justify-center gap-2 text-xs uppercase tracking-widest text-[#8e7a8e] font-mono">
-            <Lock className="w-3.5 h-3.5 text-[#f0c98a]" />
+          <div className="mt-8 sm:mt-14 flex items-center justify-center gap-2 text-[10px] sm:text-xs uppercase tracking-wider sm:tracking-widest text-[#8e7a8e] font-mono text-center flex-wrap px-4">
+            <Lock className="w-3.5 h-3.5 text-[#f0c98a] shrink-0" />
             <span>CLYRO · PRIVATE CODE REVIEW · RUNS 100% LOCALLY</span>
           </div>
         </main>
@@ -983,19 +990,19 @@ export default function Home() {
       {phase === 'workspace' && scanResult && (
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Top Bar with Live Health Score & Category Filter Buttons */}
-          <div className="px-6 py-3 border-b border-[rgba(201,119,127,0.18)] bg-[#190f24]/80 backdrop-blur-md flex flex-wrap items-center justify-between gap-4">
+          <div className="px-3 sm:px-6 py-2.5 sm:py-3 border-b border-[rgba(201,119,127,0.18)] bg-[#190f24]/80 backdrop-blur-md flex flex-wrap items-center justify-between gap-3 sm:gap-4">
             {/* Health Score */}
-            <div className="flex items-center gap-3">
-              <HealthGauge score={scanResult.healthScore} size={50} />
+            <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
+              <HealthGauge score={scanResult.healthScore} size={44} />
               <div>
-                <span className="text-[10px] uppercase font-semibold tracking-wider text-[#8e7a8e] font-mono">
+                <span className="text-[9px] sm:text-[10px] uppercase font-semibold tracking-wider text-[#8e7a8e] font-mono">
                   Health Index
                 </span>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-base font-bold font-serif-heading text-[#f6e7dc]">
+                  <span className="text-sm sm:text-base font-bold font-serif-heading text-[#f6e7dc]">
                     {scanResult.healthScore}/100
                   </span>
-                  <span className="text-xs text-[#b8a5b8]">
+                  <span className="text-[11px] sm:text-xs text-[#b8a5b8]">
                     ({scanResult.totalIssues} issues)
                   </span>
                 </div>
@@ -1003,14 +1010,14 @@ export default function Home() {
             </div>
 
             {/* SIX CATEGORY BUTTONS + ALL (Live counts, filtering across project) */}
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-1 max-w-full">
               {/* ALL BUTTON */}
               <button
                 onClick={() => {
                   setCategoryFilter('all');
                   setActiveTab('editor');
                 }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer ${categoryFilter === 'all' && activeTab === 'editor'
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer shrink-0 ${categoryFilter === 'all' && activeTab === 'editor'
                     ? 'clyro-btn-primary border-transparent text-white shadow-[0_0_15px_rgba(201,119,127,0.35)]'
                     : 'bg-[#0f0816]/80 border-[rgba(201,119,127,0.25)] text-[#b8a5b8] hover:text-[#f6e7dc] hover:border-[rgba(201,119,127,0.45)]'
                   }`}
@@ -1048,7 +1055,7 @@ export default function Home() {
                         setCategoryFilter(categoryFilter === item.id ? 'all' : (item.id as CategoryType));
                       }
                     }}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer ${isActive
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer shrink-0 ${isActive
                         ? 'clyro-btn-primary border-transparent text-white shadow-[0_0_15px_rgba(201,119,127,0.35)]'
                         : 'bg-[#0f0816]/80 border-[rgba(201,119,127,0.25)] text-[#b8a5b8] hover:text-[#f6e7dc] hover:border-[rgba(201,119,127,0.45)]'
                       }`}
@@ -1069,7 +1076,7 @@ export default function Home() {
               {fixableCategoryCount > 0 && (
                 <button
                   onClick={() => applyAllCategoryFixes(categoryFilter)}
-                  className="clyro-btn-primary flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold text-white shadow-[0_0_20px_rgba(201,119,127,0.35)] transition-all cursor-pointer ml-1"
+                  className="clyro-btn-primary flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold text-white shadow-[0_0_20px_rgba(201,119,127,0.35)] transition-all cursor-pointer ml-1 shrink-0"
                   title={`Automatically fix and resolve detected issues (${categoryFilter === 'all' ? 'All' : categoryFilter})`}
                 >
                   <Wand2 className="w-3.5 h-3.5 text-[#f0c98a]" />
@@ -1083,7 +1090,7 @@ export default function Home() {
             </div>
 
             {/* TAB SWITCHER */}
-            <div className="flex items-center gap-1 bg-[#0f0816]/90 p-1 rounded-full border border-[rgba(201,119,127,0.25)]">
+            <div className="flex items-center gap-1 bg-[#0f0816]/90 p-1 rounded-full border border-[rgba(201,119,127,0.25)] shrink-0 overflow-x-auto no-scrollbar">
               <button
                 onClick={() => setActiveTab('editor')}
                 className={`px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer ${activeTab === 'editor'
@@ -1114,63 +1121,168 @@ export default function Home() {
             </div>
           </div>
 
-          {/* TAB 1: CODE WORKSPACE (3-Pane IDE) */}
+          {/* TAB 1: CODE WORKSPACE (3-Pane IDE on Desktop, Full-Width Tabs on Mobile) */}
           {activeTab === 'editor' && (
-            <div className="flex-1 grid grid-cols-12 overflow-hidden">
-              {/* LEFT: File Explorer (Cols 3) */}
-              <div className="col-span-3 h-full overflow-hidden">
-                <FileExplorer
-                  files={files}
-                  selectedPath={activeFilePath}
-                  onSelectFile={(path) => {
-                    setActiveFilePath(path);
-                    const first = scanResult.issues.find((i) => i.filePath === path);
-                    if (first) setSelectedIssueId(first.id);
-                  }}
-                  issues={scanResult.issues.filter((i) => !i.isApplied)}
-                />
+            <div className="flex-1 flex flex-col overflow-hidden">
+              {/* Mobile Sub-Navigation Segment Tabs (< lg only) */}
+              <div className="lg:hidden flex items-center justify-around bg-[#12081d] border-b border-[rgba(201,119,127,0.25)] px-2 py-1.5 shrink-0 z-20">
+                <button
+                  type="button"
+                  onClick={() => setMobilePane('files')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                    mobilePane === 'files'
+                      ? 'clyro-btn-primary text-white shadow-sm'
+                      : 'text-[#b8a5b8] hover:text-[#f6e7dc]'
+                  }`}
+                >
+                  <FolderPlus className="w-3.5 h-3.5" />
+                  <span>Files ({files.length})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMobilePane('editor')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                    mobilePane === 'editor'
+                      ? 'clyro-btn-primary text-white shadow-sm'
+                      : 'text-[#b8a5b8] hover:text-[#f6e7dc]'
+                  }`}
+                >
+                  <FileCode className="w-3.5 h-3.5" />
+                  <span>Editor</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMobilePane('issues')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                    mobilePane === 'issues'
+                      ? 'clyro-btn-primary text-white shadow-sm'
+                      : 'text-[#b8a5b8] hover:text-[#f6e7dc]'
+                  }`}
+                >
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  <span>Issues ({scanResult.issues.filter((i) => !i.isApplied).length})</span>
+                </button>
               </div>
 
-              {/* CENTER: Monaco Code Editor with Live Squiggly Lines (Cols 5) */}
-              <div className="col-span-5 h-full overflow-hidden border-r border-[var(--border-color)]">
-                {activeFile ? (
-                  <MonacoCodeWorkspace
-                    filePath={activeFilePath}
-                    code={activeFile.content}
-                    onChangeCode={handleCodeChange}
-                    issues={scanResult.issues.filter((i) => i.filePath === activeFilePath && !i.isApplied)}
-                    selectedIssueId={selectedIssueId}
-                    onSelectIssueId={(id) => setSelectedIssueId(id)}
-                    onSaveToDisk={() => saveFileToDisk()}
-                    isScanning={isScanning}
-                    theme={theme === 'dark' ? 'vs-dark' : 'light'}
+              {/* Desktop 3-Pane View (>= lg) */}
+              <div className="hidden lg:grid flex-1 grid-cols-12 overflow-hidden h-full">
+                {/* LEFT: File Explorer (Cols 3) */}
+                <div className="col-span-3 h-full overflow-hidden">
+                  <FileExplorer
+                    files={files}
+                    selectedPath={activeFilePath}
+                    onSelectFile={(path) => {
+                      setActiveFilePath(path);
+                      const first = scanResult.issues.find((i) => i.filePath === path);
+                      if (first) setSelectedIssueId(first.id);
+                    }}
+                    issues={scanResult.issues.filter((i) => !i.isApplied)}
                   />
-                ) : (
-                  <div className="h-full flex items-center justify-center text-slate-500 text-xs">
-                    Select a file from the explorer
+                </div>
+
+                {/* CENTER: Monaco Code Editor with Live Squiggly Lines (Cols 5) */}
+                <div className="col-span-5 h-full overflow-hidden border-r border-[var(--border-color)]">
+                  {activeFile ? (
+                    <MonacoCodeWorkspace
+                      filePath={activeFilePath}
+                      code={activeFile.content}
+                      onChangeCode={handleCodeChange}
+                      issues={scanResult.issues.filter((i) => i.filePath === activeFilePath && !i.isApplied)}
+                      selectedIssueId={selectedIssueId}
+                      onSelectIssueId={(id) => setSelectedIssueId(id)}
+                      onSaveToDisk={() => saveFileToDisk()}
+                      isScanning={isScanning}
+                      theme={theme === 'dark' ? 'vs-dark' : 'light'}
+                    />
+                  ) : (
+                    <div className="h-full flex items-center justify-center text-slate-500 text-xs">
+                      Select a file from the explorer
+                    </div>
+                  )}
+                </div>
+
+                {/* RIGHT: Issues Panel with Filtered Category, Side-by-Side Solution Code, and Apply Fix (Cols 4) */}
+                <div className="col-span-4 h-full overflow-hidden">
+                  <IssuesPanel
+                    currentFile={activeFilePath}
+                    issues={displayedIssues}
+                    selectedCategory={categoryFilter}
+                    selectedIssueId={selectedIssueId}
+                    onSelectIssue={(issue) => {
+                      setSelectedIssueId(issue.id);
+                      if (issue.filePath !== activeFilePath) {
+                        setActiveFilePath(issue.filePath);
+                      }
+                    }}
+                    onApplyFix={applyFixToIssue}
+                    onUndoFix={undoFixOnIssue}
+                    onApplyAllCategoryFixes={applyAllCategoryFixes}
+                    onApplyAllFileFixes={() => applyAllCategoryFixes('all')}
+                  />
+                </div>
+              </div>
+
+              {/* Mobile 1-Pane Full View (< lg) */}
+              <div className="lg:hidden flex-1 flex flex-col overflow-hidden h-full">
+                {mobilePane === 'files' && (
+                  <div className="h-full overflow-hidden">
+                    <FileExplorer
+                      files={files}
+                      selectedPath={activeFilePath}
+                      onSelectFile={(path) => {
+                        setActiveFilePath(path);
+                        const first = scanResult.issues.find((i) => i.filePath === path);
+                        if (first) setSelectedIssueId(first.id);
+                        setMobilePane('editor');
+                      }}
+                      issues={scanResult.issues.filter((i) => !i.isApplied)}
+                    />
                   </div>
                 )}
-              </div>
 
-              {/* RIGHT: Issues Panel with Filtered Category, Side-by-Side Solution Code, and Apply Fix (Cols 4) */}
-              <div className="col-span-4 h-full overflow-hidden">
-                <IssuesPanel
-                  currentFile={activeFilePath}
-                  issues={displayedIssues}
-                  selectedCategory={categoryFilter}
-                  selectedIssueId={selectedIssueId}
-                  onSelectIssue={(issue) => {
-                    setSelectedIssueId(issue.id);
-                    // Open that file if different
-                    if (issue.filePath !== activeFilePath) {
-                      setActiveFilePath(issue.filePath);
-                    }
-                  }}
-                  onApplyFix={applyFixToIssue}
-                  onUndoFix={undoFixOnIssue}
-                  onApplyAllCategoryFixes={applyAllCategoryFixes}
-                  onApplyAllFileFixes={() => applyAllCategoryFixes('all')}
-                />
+                {mobilePane === 'editor' && (
+                  <div className="h-full overflow-hidden">
+                    {activeFile ? (
+                      <MonacoCodeWorkspace
+                        filePath={activeFilePath}
+                        code={activeFile.content}
+                        onChangeCode={handleCodeChange}
+                        issues={scanResult.issues.filter((i) => i.filePath === activeFilePath && !i.isApplied)}
+                        selectedIssueId={selectedIssueId}
+                        onSelectIssueId={(id) => setSelectedIssueId(id)}
+                        onSaveToDisk={() => saveFileToDisk()}
+                        isScanning={isScanning}
+                        theme={theme === 'dark' ? 'vs-dark' : 'light'}
+                      />
+                    ) : (
+                      <div className="h-full flex items-center justify-center text-slate-500 text-xs">
+                        Select a file from the explorer
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {mobilePane === 'issues' && (
+                  <div className="h-full overflow-hidden">
+                    <IssuesPanel
+                      currentFile={activeFilePath}
+                      issues={displayedIssues}
+                      selectedCategory={categoryFilter}
+                      selectedIssueId={selectedIssueId}
+                      onSelectIssue={(issue) => {
+                        setSelectedIssueId(issue.id);
+                        if (issue.filePath !== activeFilePath) {
+                          setActiveFilePath(issue.filePath);
+                        }
+                        setMobilePane('editor');
+                      }}
+                      onApplyFix={applyFixToIssue}
+                      onUndoFix={undoFixOnIssue}
+                      onApplyAllCategoryFixes={applyAllCategoryFixes}
+                      onApplyAllFileFixes={() => applyAllCategoryFixes('all')}
+                    />
+                  </div>
+                )}
               </div>
             </div>
           )}

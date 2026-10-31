@@ -210,16 +210,16 @@ export const CinematicLoginIntro: React.FC<CinematicLoginIntroProps> = ({
       {/* 4. LEFT BRAND OVERLAY (ACTIVE ONCE SUNSET AWAKENS)                        */}
       {/* ========================================================================= */}
       <div
-        className={`absolute top-8 left-8 sm:top-10 sm:left-12 z-10 pointer-events-none transition-opacity duration-1000 ${
+        className={`absolute top-4 left-4 sm:top-10 sm:left-12 z-10 pointer-events-none transition-opacity duration-1000 ${
           stage === 'lighthouse_drop' || stage === 'beacon_sweep' || stage === 'login_popup'
             ? 'opacity-100'
             : 'opacity-0'
-        }`}
+        } ${stage === 'login_popup' ? 'hidden sm:block' : 'block'}`}
       >
-        <span className="text-[11px] uppercase tracking-[0.28em] font-bold text-[#f0c98a] block drop-shadow-sm">
+        <span className="text-[9px] sm:text-[11px] uppercase tracking-[0.2em] sm:tracking-[0.28em] font-bold text-[#f0c98a] block drop-shadow-sm">
           A Clearer View Before The Merge
         </span>
-        <h2 className="font-serif-heading text-3xl sm:text-4xl lg:text-5xl font-bold text-[#ffffff] mt-2 leading-[1.15] tracking-tight drop-shadow-[0_2px_14px_rgba(0,0,0,0.9)] max-w-md">
+        <h2 className="font-serif-heading text-xl sm:text-4xl lg:text-5xl font-bold text-[#ffffff] mt-1 sm:mt-2 leading-[1.15] tracking-tight drop-shadow-[0_2px_14px_rgba(0,0,0,0.9)] max-w-[240px] sm:max-w-md">
           See what&apos;s hiding in the dark.
         </h2>
       </div>
@@ -227,7 +227,7 @@ export const CinematicLoginIntro: React.FC<CinematicLoginIntroProps> = ({
       {/* ========================================================================= */}
       {/* 5. TOP RIGHT QUICK ACCESS CONTROLS                                        */}
       {/* ========================================================================= */}
-      <div className="absolute top-6 right-6 sm:top-8 sm:right-8 z-30 flex items-center gap-3">
+      <div className="absolute top-4 right-4 sm:top-8 sm:right-8 z-30 flex items-center gap-2 sm:gap-3">
         {stage !== 'login_popup' && (
           <button
             type="button"
@@ -240,17 +240,19 @@ export const CinematicLoginIntro: React.FC<CinematicLoginIntroProps> = ({
           </button>
         )}
 
-        <StatusChip label="PRIVATE SESSION" />
+        <div className="hidden sm:block">
+          <StatusChip label="PRIVATE SESSION" />
+        </div>
       </div>
 
       {/* ========================================================================= */}
       {/* 6. STAGE 5: LOGIN POP-UP OPENS UNDER THE SPOTLIGHT AT THE RIGHT SIDE     */}
       {/* ========================================================================= */}
       <div
-        className={`absolute inset-0 z-30 flex items-center justify-end p-4 sm:p-8 lg:pr-16 pointer-events-none transition-all duration-700 ${
+        className={`absolute inset-0 z-30 flex items-center justify-center sm:justify-end p-3 sm:p-8 lg:pr-16 transition-all duration-700 overflow-y-auto ${
           stage === 'login_popup'
-            ? 'opacity-100 translate-y-0 scale-100'
-            : 'opacity-0 translate-y-6 scale-95'
+            ? 'opacity-100 translate-y-0 scale-100 pointer-events-auto'
+            : 'opacity-0 translate-y-6 scale-95 pointer-events-none'
         }`}
       >
         {/* Lighthouse Beam Spotlight Floor Glow hitting the right side */}
@@ -264,7 +266,7 @@ export const CinematicLoginIntro: React.FC<CinematicLoginIntroProps> = ({
         />
 
         {/* The Login Pop-Up Card */}
-        <div className="w-full max-w-[430px] rounded-3xl bg-[#14081e]/92 border border-[rgba(201,119,127,0.45)] backdrop-blur-2xl shadow-[0_10px_50px_rgba(0,0,0,0.85),0_0_35px_rgba(201,119,127,0.35)] p-6 sm:p-8 pointer-events-auto relative overflow-hidden">
+        <div className="w-full max-w-[430px] rounded-2xl sm:rounded-3xl bg-[#14081e]/95 border border-[rgba(201,119,127,0.45)] backdrop-blur-2xl shadow-[0_10px_50px_rgba(0,0,0,0.85),0_0_35px_rgba(201,119,127,0.35)] p-5 sm:p-8 pointer-events-auto relative overflow-hidden my-auto">
           {/* Top Ambient Highlight Rim */}
           <div
             className="absolute -top-24 left-1/2 -translate-x-1/2 w-72 h-36 rounded-full pointer-events-none"

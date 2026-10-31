@@ -232,33 +232,35 @@ export default function AdminPage() {
       {/* ========================================================================= */}
       {/* 1. TOP NAVIGATION BAR                                                     */}
       {/* ========================================================================= */}
-      <header className="h-16 px-6 border-b border-[rgba(201,119,127,0.25)] flex items-center justify-between bg-[#13071f]/85 backdrop-blur-xl sticky top-0 z-40">
-        <div className="flex items-center gap-4">
+      <header className="h-16 px-3 sm:px-6 border-b border-[rgba(201,119,127,0.25)] flex items-center justify-between bg-[#13071f]/85 backdrop-blur-xl sticky top-0 z-40">
+        <div className="flex items-center gap-2 sm:gap-4 shrink-0">
           <Link
             href="/"
-            className="flex items-center gap-2 text-xs font-semibold text-[#f0c98a] hover:text-[#fff5e0] transition-colors bg-[#1d0d2b] px-3 py-1.5 rounded-xl border border-[rgba(201,119,127,0.3)] shadow-sm"
+            className="flex items-center gap-1.5 text-xs font-semibold text-[#f0c98a] hover:text-[#fff5e0] transition-colors bg-[#1d0d2b] px-2.5 sm:px-3 py-1.5 rounded-xl border border-[rgba(201,119,127,0.3)] shadow-sm shrink-0"
             title="Return to Scanner Workspace"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Workspace</span>
+            <span className="hidden sm:inline">Workspace</span>
           </Link>
 
-          <div className="h-4 w-px bg-[rgba(201,119,127,0.3)]" />
+          <div className="h-4 w-px bg-[rgba(201,119,127,0.3)] hidden sm:block" />
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 shrink-0">
             <Logo size="sm" />
-            <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#f0c98a] bg-[rgba(240,201,138,0.12)] px-2.5 py-0.5 rounded-full border border-[rgba(240,201,138,0.3)]">
-              ADMIN CONSOLE
+            <span className="text-[9px] sm:text-[10px] font-mono font-bold uppercase tracking-widest text-[#f0c98a] bg-[rgba(240,201,138,0.12)] px-2 sm:px-2.5 py-0.5 rounded-full border border-[rgba(240,201,138,0.3)] shrink-0">
+              ADMIN
             </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <StatusChip
-            variant="db"
-            label="POSTGRESQL"
-            title={`Database connected: ${stats?.database?.database || 'major_projects_db'}`}
-          />
+        <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto no-scrollbar py-1">
+          <div className="hidden md:inline-flex">
+            <StatusChip
+              variant="db"
+              label="POSTGRESQL"
+              title={`Database connected: ${stats?.database?.database || 'major_projects_db'}`}
+            />
+          </div>
           {!isOnline && <StatusChip variant="offline" label="OFFLINE" title="Operating in offline mode" />}
 
           <button
@@ -295,7 +297,7 @@ export default function AdminPage() {
       {/* ========================================================================= */}
       {/* 2. MAIN CONTENT AREA                                                      */}
       {/* ========================================================================= */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-6 sm:p-8 space-y-8 relative z-10">
+      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-8 space-y-6 sm:space-y-8 relative z-10">
         {/* Page Banner Title */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
