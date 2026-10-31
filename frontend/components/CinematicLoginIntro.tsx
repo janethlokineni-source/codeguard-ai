@@ -71,6 +71,7 @@ export const CinematicLoginIntro: React.FC<CinematicLoginIntroProps> = ({
     }
   }, []);
   const [rememberMe, setRememberMe] = useState(true);
+  const [feedbackMsg, setFeedbackMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
 
@@ -114,25 +115,80 @@ export const CinematicLoginIntro: React.FC<CinematicLoginIntroProps> = ({
     setStage('login_popup');
   };
 
-  // Upon authentication, smooth exit and open website
-  const handleAuthComplete = (e?: React.FormEvent) => {
+  // Handle authentication submission: Create account -> Transition to Sign in
+  const handleAuthSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+    setFeedbackMsg(null);
     setIsSubmitting(true);
+
+    const userEmail = email.trim().toLowerCase();
+    const userPass = password;
+
+    if (isSignUp) {
+      // 1. REGISTRATION FLOW: Create account then immediately redirect to Sign In tab
+      try {
+        if (typeof window !== 'undefined') {
+          const raw = localStorage.getItem('clyro_offline_users') || '{}';
+          const registry = JSON.parse(raw);
+          registry[userEmail] = { email: userEmail, password: userPass, created_at: new Date().toISOString() };
+          localStorage.setItem('clyro_offline_users', JSON.stringify(registry));
+        }
+
+        if (typeof window !== 'undefined' && navigator.onLine) {
+          fetch('http://localhost:8000/api/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: userEmail, password: userPass }),
+          }).catch(() => {});
+        }
+
+        // Successfully created account: switch to Sign In, keep email, clear password
+        setIsSignUp(false);
+        setPassword('');
+        setFeedbackMsg({
+          type: 'success',
+          text: 'Account created successfully! Please sign in.',
+        });
+      } catch (err: any) {
+        setFeedbackMsg({ type: 'error', text: 'Could not create account. Please try again.' });
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
+    // 2. SIGN IN FLOW: Authenticate and open workspace
     if (typeof window !== 'undefined') {
       localStorage.setItem('clyro_auth', 'true');
+      localStorage.setItem('clyro_user_email', userEmail || 'developer@clyro.local');
     }
-    // Attempt to persist to PostgreSQL backend when online
+
     if (typeof window !== 'undefined' && navigator.onLine) {
       fetch('http://localhost:8000/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: email || 'developer@clyro.local',
-          password: password || 'session_token',
+          email: userEmail || 'developer@clyro.local',
+          password: userPass || 'session_token',
         }),
       }).catch(() => {});
     }
 
+    setTimeout(() => {
+      setIsExiting(true);
+      setTimeout(() => {
+        onComplete();
+      }, 500);
+    }, 350);
+  };
+
+  // Direct guest login
+  const handleGuestEnter = () => {
+    setIsSubmitting(true);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('clyro_auth', 'true');
+      localStorage.setItem('clyro_user_email', 'guest@clyro.local');
+    }
     setTimeout(() => {
       setIsExiting(true);
       setTimeout(() => {
@@ -333,7 +389,7 @@ export const CinematicLoginIntro: React.FC<CinematicLoginIntroProps> = ({
           <div className="mb-5 p-1 bg-[#0d0414] rounded-xl border border-[rgba(201,119,127,0.3)] grid grid-cols-2 gap-1 relative z-10">
             <button
               type="button"
-              onClick={() => setIsSignUp(false)}
+              onClick={() => { setIsSignUp(false); setFeedbackMsg(null); }}
               className={`py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                 !isSignUp
                   ? 'bg-[#351944] text-[#ffffff] border border-[#c9777f]/70 shadow-[0_0_12px_rgba(201,119,127,0.35)]'
@@ -344,7 +400,7 @@ export const CinematicLoginIntro: React.FC<CinematicLoginIntroProps> = ({
             </button>
             <button
               type="button"
-              onClick={() => setIsSignUp(true)}
+              onClick={() => { setIsSignUp(true); setFeedbackMsg(null); }}
               className={`py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                 isSignUp
                   ? 'bg-[#351944] text-[#ffffff] border border-[#c9777f]/70 shadow-[0_0_12px_rgba(201,119,127,0.35)]'
@@ -355,8 +411,26 @@ export const CinematicLoginIntro: React.FC<CinematicLoginIntroProps> = ({
             </button>
           </div>
 
+          {/* Feedback Banner */}
+          {feedbackMsg && (
+            <div
+              className={`mb-3.5 p-2.5 rounded-xl text-xs font-medium flex items-center gap-2 transition-all relative z-10 ${
+                feedbackMsg.type === 'success'
+                  ? 'bg-emerald-950/90 border border-emerald-500/70 text-emerald-200 shadow-[0_0_15px_rgba(16,185,129,0.3)]'
+                  : 'bg-rose-950/90 border border-rose-500/70 text-rose-200 shadow-[0_0_15px_rgba(244,63,94,0.3)]'
+              }`}
+            >
+              {feedbackMsg.type === 'success' ? (
+                <Check className="w-4 h-4 text-emerald-400 shrink-0 stroke-[2.5]" />
+              ) : (
+                <Lock className="w-4 h-4 text-rose-400 shrink-0" />
+              )}
+              <span>{feedbackMsg.text}</span>
+            </div>
+          )}
+
           {/* Form */}
-          <form onSubmit={handleAuthComplete} className="space-y-3.5 relative z-10">
+          <form onSubmit={handleAuthSubmit} className="space-y-3.5 relative z-10">
             {/* Email Field */}
             <div>
               <label className="block text-xs font-semibold text-[#f6e7dc] tracking-wider uppercase mb-1.5">
@@ -421,7 +495,7 @@ export const CinematicLoginIntro: React.FC<CinematicLoginIntroProps> = ({
               {!isSignUp && (
                 <button
                   type="button"
-                  onClick={handleAuthComplete}
+                  onClick={() => setFeedbackMsg({ type: 'success', text: 'Offline mode: use your email and password or Continue as guest.' })}
                   className="text-xs font-semibold text-[#f0c98a] hover:text-[#fff2d6] transition-colors cursor-pointer"
                 >
                   Forgot password?
@@ -437,9 +511,9 @@ export const CinematicLoginIntro: React.FC<CinematicLoginIntroProps> = ({
             >
               <span>
                 {isSubmitting
-                  ? 'Entering Workspace...'
+                  ? (isSignUp ? 'Creating Account...' : 'Entering Workspace...')
                   : isSignUp
-                  ? 'Create Workspace'
+                  ? 'Create Account'
                   : 'Sign In & Enter'}
               </span>
               {!isSubmitting && <ArrowRight className="w-4 h-4" />}
@@ -461,7 +535,7 @@ export const CinematicLoginIntro: React.FC<CinematicLoginIntroProps> = ({
             <button
               type="button"
               disabled={!isOnline}
-              onClick={() => handleAuthComplete()}
+              onClick={handleGuestEnter}
               className={`h-10 rounded-xl bg-[#0d0414] border text-xs font-semibold flex items-center justify-center gap-2 transition-all shadow-sm ${
                 !isOnline
                   ? 'opacity-40 cursor-not-allowed border-[rgba(201,119,127,0.2)] text-[#7e6980]'
@@ -485,7 +559,7 @@ export const CinematicLoginIntro: React.FC<CinematicLoginIntroProps> = ({
 
             <button
               type="button"
-              onClick={() => handleAuthComplete()}
+              onClick={handleGuestEnter}
               className="h-10 rounded-xl bg-[#0d0414] hover:bg-[#1d0e2b] border border-[rgba(201,119,127,0.38)] hover:border-[#f0c98a] text-xs font-semibold text-[#f6e7dc] flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-sm"
               title="Enter workspace as local guest"
             >
