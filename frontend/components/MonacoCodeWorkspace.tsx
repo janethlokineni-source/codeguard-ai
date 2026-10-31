@@ -7,7 +7,9 @@ import { Save, Sparkles, FileCode, CheckCircle2 } from 'lucide-react';
 
 // Configure Monaco to load 100% locally from /monaco/vs with zero internet/CDN calls
 if (typeof window !== 'undefined') {
-  loader.config({ paths: { vs: '/monaco/vs' } });
+  const isGh = window.location.pathname.startsWith('/codeguard-ai');
+  const monacoBase = isGh ? '/codeguard-ai/monaco/vs' : '/monaco/vs';
+  loader.config({ paths: { vs: monacoBase } });
 }
 
 interface MonacoCodeWorkspaceProps {
@@ -104,6 +106,14 @@ export const MonacoCodeWorkspace: React.FC<MonacoCodeWorkspaceProps> = ({
     });
 
     updateMarkersAndDecorations();
+
+    if (selectedIssueId) {
+      const currentIssue = issues.find((i) => i.id === selectedIssueId);
+      if (currentIssue) {
+        editor.revealLineInCenter(currentIssue.lineNumber);
+        editor.setPosition({ lineNumber: currentIssue.lineNumber, column: 1 });
+      }
+    }
   };
 
   // Update Monaco squiggly line markers and gutter indicators
@@ -195,7 +205,7 @@ export const MonacoCodeWorkspace: React.FC<MonacoCodeWorkspaceProps> = ({
         editor.deltaDecorations(flashDec, []);
       }, 1500);
     }
-  }, [selectedIssueId, issues]);
+  }, [selectedIssueId, issues, filePath]);
 
   const handleEditorChange = (value: string | undefined) => {
     if (value !== undefined) {

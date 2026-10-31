@@ -83,9 +83,9 @@ self.addEventListener('fetch', (event) => {
 
   // 4. Static assets (/_next/static/, /fonts/, /monaco/, images): Cache-first
   const isStatic =
-    url.pathname.startsWith('/_next/static/') ||
-    url.pathname.startsWith('/fonts/') ||
-    url.pathname.startsWith('/monaco/') ||
+    url.pathname.includes('/_next/static/') ||
+    url.pathname.includes('/fonts/') ||
+    url.pathname.includes('/monaco/') ||
     url.pathname.match(/\.(png|jpg|jpeg|svg|ico|woff2?|css|js)$/);
 
   if (isStatic) {

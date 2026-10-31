@@ -10,8 +10,10 @@ export function ServiceWorkerRegister() {
       process.env.NODE_ENV === 'production'
     ) {
       const registerSW = () => {
+        const isGh = window.location.pathname.startsWith('/codeguard-ai');
+        const swPath = isGh ? '/codeguard-ai/sw.js' : '/sw.js';
         navigator.serviceWorker
-          .register('/sw.js')
+          .register(swPath)
           .then((registration) => {
             console.log('[CLYRO] Service worker registered with scope:', registration.scope);
             registration.onupdatefound = () => {

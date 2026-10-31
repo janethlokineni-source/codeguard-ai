@@ -88,8 +88,8 @@ export const IssuesPanel: React.FC<IssuesPanelProps> = React.memo(({
               <Wand2 className="w-3 h-3 text-[#f0c98a]" />
               <span>
                 {selectedCategory === 'all'
-                  ? `Remove All Errors (${safeFixesCount})`
-                  : `Fix All (${safeFixesCount})`}
+                  ? `Fix All Issues (${safeFixesCount})`
+                  : `Fix All ${selectedCategory === 'performance' ? 'Perf' : selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)} (${safeFixesCount})`}
               </span>
             </button>
           )}

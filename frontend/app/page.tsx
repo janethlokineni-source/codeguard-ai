@@ -202,6 +202,20 @@ export default function Home() {
     return counts;
   }, [scanResult?.issues, scanResult?.dependencies]);
 
+  // Fixable issues count for active filter category
+  const fixableCategoryCount = useMemo(() => {
+    if (!scanResult) return 0;
+    return scanResult.issues.filter((i) => {
+      if (i.isApplied || i.suggestedFix === undefined) return false;
+      if (categoryFilter === 'all') return true;
+      const c = i.category.toLowerCase();
+      if (categoryFilter === 'error') return c === 'error' || c === 'errors';
+      if (categoryFilter === 'bug') return c === 'bug' || c === 'bugs';
+      if (categoryFilter === 'performance') return c === 'performance' || c === 'perf';
+      return c === categoryFilter;
+    }).length;
+  }, [scanResult, categoryFilter]);
+
   // Filtered issues to show in the right panel (across all files or for active file)
   const displayedIssues = useMemo(() => {
     if (!scanResult) return [];
@@ -1051,15 +1065,19 @@ export default function Home() {
                 );
               })}
 
-              {/* REMOVE ALL ERRORS (1-CLICK CLEANUP) */}
-              {scanResult.issues.filter(i => !i.isApplied && i.suggestedFix !== undefined).length > 0 && (
+              {/* AUTO-FIX ALL ISSUES (1-CLICK CLEANUP) */}
+              {fixableCategoryCount > 0 && (
                 <button
-                  onClick={() => applyAllCategoryFixes('all')}
+                  onClick={() => applyAllCategoryFixes(categoryFilter)}
                   className="clyro-btn-primary flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold text-white shadow-[0_0_20px_rgba(201,119,127,0.35)] transition-all cursor-pointer ml-1"
-                  title="Automatically fix and remove all detected errors in this project"
+                  title={`Automatically fix and resolve detected issues (${categoryFilter === 'all' ? 'All' : categoryFilter})`}
                 >
                   <Wand2 className="w-3.5 h-3.5 text-[#f0c98a]" />
-                  <span>Remove All Errors ({scanResult.issues.filter(i => !i.isApplied && i.suggestedFix !== undefined).length})</span>
+                  <span>
+                    {categoryFilter === 'all'
+                      ? `Fix All Issues (${fixableCategoryCount})`
+                      : `Fix All ${categoryFilter === 'performance' ? 'Perf' : categoryFilter.charAt(0).toUpperCase() + categoryFilter.slice(1)} (${fixableCategoryCount})`}
+                  </span>
                 </button>
               )}
             </div>

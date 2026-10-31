@@ -342,7 +342,7 @@ COMPILED_RULES: List[CompiledRule] = [
         "performance", "Low",
         "Inline Style Object Re-creation",
         "Inline style objects in JSX force the JavaScript engine to allocate a new object on every render cycle, triggering unnecessary DOM reconciliation and sub-tree re-renders.",
-        lambda line, l: line.replace("style={{", "className=\"/* extracted-styles */\" style={{"),
+        lambda line, l: re.sub(r"""\s*\bstyle\s*=\s*\{\{\s*(?!display:\s*['"]none['"])[^}]+\s*\}\}""", '', line) if 'className=' in line else re.sub(r"""\bstyle\s*=\s*\{\{\s*(?!display:\s*['"]none['"])[^}]+\s*\}\}""", 'className="/* extracted-styles */"', line),
         ["javascript", "typescript"]
     ),
 
@@ -358,11 +358,11 @@ COMPILED_RULES: List[CompiledRule] = [
 
     # 24. Potential Memory Leak in Component
     CompiledRule(
-        r"""\b(?:window\.addEventListener|document\.addEventListener|setInterval)\(""",
+        r"""^(?!.*//\s*Ensure cleanup).*(?:window\.addEventListener|document\.addEventListener|setInterval)\(""",
         "performance", "Medium",
         "Potential Memory Leak (Uncleaned Listener/Timer)",
         "Attaching global event listeners or intervals without returning an explicit cleanup function in useEffect causes memory leaks and duplicate handler firings on unmount.",
-        lambda line, l: f"{line} // Ensure cleanup return is defined in useEffect",
+        lambda line, l: f"{line.rstrip()} // Ensure cleanup return is defined in useEffect",
         ["javascript", "typescript"]
     ),
 
