@@ -2,18 +2,19 @@
   "name": "CLYRO - Instant Pre-Merge Code & Security Scanner",
   "short_name": "CLYRO",
   "description": "Instant Pre-Merge Code & Security Scanner for Hackathon Teams. 100% Local, Offline-First, and Privacy-Preserving.",
-  "start_url": "/",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#0a0312",
   "theme_color": "#120b1a",
   "icons": [
     {
-      "src": "/clyro-icon.png",
+      "src": "clyro-icon.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/clyro-logo.jpg",
+      "src": "clyro-logo.jpg",
       "sizes": "512x512",
       "type": "image/jpeg"
     }
